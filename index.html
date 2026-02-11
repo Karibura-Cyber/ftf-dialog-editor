@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTF Dialog Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0a0c;
+    --surface:   #111116;
+    --surface2:  #18181f;
+    --surface3:  #1e1e28;
+    --border:    #2a2a38;
+    --border2:   #3a3a50;
+    --gold:      #c8a84b;
+    --gold2:     #e8c96a;
+    --text:      #e0dbd0;
+    --muted:     #7a7590;
+    --accent:    #5b4fcf;
+    --accent2:   #7b6fef;
+    --danger:    #cf4f5b;
+    --success:   #4fcf8a;
+    --radius:    6px;
+  }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border2);
+    color: var(--muted);
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-primary {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #0a0a0c;
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--gold2); border-color: var(--gold2); }
+  .btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 4px 10px; font-size: 10px; }
+  .btn-icon {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { border-color: var(--border2); color: var(--text); }
+  .btn-icon.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── LAYOUT ── */
+  .workspace {
+    display: grid;
+    grid-template-columns: 280px 1fr 340px;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 52px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dialog-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .dialog-list::-webkit-scrollbar { width: 4px; }
+  .dialog-list::-webkit-scrollbar-track { background: transparent; }
+  .dialog-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .dialog-item {
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border: 1px solid transparent;
+    transition: all 0.12s;
+    margin-bottom: 2px;
+  }
+  .dialog-item:hover { background: var(--surface2); border-color: var(--border); }
+  .dialog-item.active { background: var(--surface3); border-color: var(--gold); }
+  .dialog-item-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dialog-item.active .dialog-item-name { color: var(--gold); }
+  .dialog-item-count {
+    font-size: 9px;
+    color: var(--muted);
+    background: var(--surface3);
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+
+  /* ── CANVAS ── */
+  .canvas {
+    overflow-y: auto;
+    padding: 20px;
+    background: var(--bg);
+    position: relative;
+  }
+  .canvas::-webkit-scrollbar { width: 6px; }
+  .canvas::-webkit-scrollbar-track { background: transparent; }
+  .canvas::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .canvas-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    color: var(--muted);
+  }
+  .canvas-empty-icon { font-size: 40px; opacity: 0.3; }
+  .canvas-empty-text { font-size: 12px; letter-spacing: 0.05em; }
+
+  .canvas-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .canvas-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gold);
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .canvas-name:focus { color: var(--text); }
+
+  /* ── LINE CARD ── */
+  .lines-container { display: flex; flex-direction: column; gap: 8px; }
+
+  .line-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.15s;
+    position: relative;
+  }
+  .line-card:hover { border-color: var(--border2); }
+  .line-card.has-choices { border-color: var(--accent); }
+  .line-card.dragging { opacity: 0.4; }
+  .line-card.drag-over { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(200,168,75,0.2); }
+
+  .line-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .drag-handle {
+    cursor: grab;
+    color: var(--muted);
+    font-size: 12px;
+    opacity: 0.4;
+    user-select: none;
+    padding: 0 2px;
+  }
+  .drag-handle:hover { opacity: 1; }
+  .drag-handle:active { cursor: grabbing; }
+
+  .line-index {
+    font-size: 9px;
+    color: var(--muted);
+    min-width: 18px;
+    text-align: center;
+    background: var(--surface3);
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+
+  .speaker-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 3px 8px;
+    width: 130px;
+    outline: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .speaker-input:focus { border-color: var(--gold); background: var(--surface3); }
+  .speaker-input::placeholder { color: var(--muted); text-transform: none; }
+
+  .typing-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--muted);
+    user-select: none;
+  }
+  .toggle-track {
+    width: 28px; height: 14px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .toggle-thumb {
+    width: 10px; height: 10px;
+    background: var(--muted);
+    border-radius: 50%;
+    position: absolute;
+    top: 1px; left: 1px;
+    transition: all 0.2s;
+  }
+  .typing-toggle.on .toggle-track { background: var(--gold); border-color: var(--gold); }
+  .typing-toggle.on .toggle-thumb { background: #0a0a0c; left: 15px; }
+  .typing-toggle.on { color: var(--gold); }
+
+  .line-body { padding: 12px; }
+
+  .text-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    width: 100%;
+    resize: none;
+    outline: none;
+    line-height: 1.6;
+    min-height: 60px;
+    transition: border-color 0.15s;
+    overflow: hidden;
+  }
+  .text-input:focus { border-color: var(--border2); }
+
+  /* ── CHOICES ── */
+  .choices-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .choices-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .choices-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    font-weight: 600;
+  }
+  .choice-card {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius);
+    margin-bottom: 6px;
+    overflow: hidden;
+  }
+  .choice-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(91,79,207,0.06);
+  }
+  .choice-text-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    outline: none;
+    flex: 1;
+  }
+  .choice-text-input::placeholder { color: var(--muted); }
+  .choice-id-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    width: 100px;
+    outline: none;
+  }
+  .choice-id-input::placeholder { color: var(--muted); }
+  .choice-id-input:focus { border-color: var(--accent); }
+
+  .choice-next {
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .choice-next.open { display: block; }
+  .choice-next-label {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .choice-next-lines { display: flex; flex-direction: column; gap: 6px; }
+
+  .nested-line {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .nested-line-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .nested-speaker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gold);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 3px 6px;
+    width: 110px;
+    outline: none;
+    text-transform: uppercase;
+  }
+  .nested-speaker:focus { border-color: var(--gold); background: var(--surface2); }
+  .nested-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    flex: 1;
+    outline: none;
+    resize: none;
+    min-height: 36px;
+    overflow: hidden;
+  }
+  .nested-text:focus { border-color: var(--border2); }
+
+  /* ── OUTPUT PANEL ── */
+  .output-panel {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .output-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .output-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .output-code {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-size: 11px;
+    line-height: 1.7;
+    white-space: pre;
+    color: var(--text);
+    background: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .output-code::-webkit-scrollbar { width: 4px; }
+  .output-code::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* syntax highlight */
+  .kw  { color: #7b6fef; }
+  .str { color: #4fcf8a; }
+  .key { color: #c8a84b; }
+  .num { color: #ef9f6f; }
+  .cmt { color: #4a4a62; }
+  .fn  { color: #6fc8ef; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface3);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    z-index: 999;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── DROP ZONE ── */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin: 0 16px 16px;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(200,168,75,0.04);
+  }
+
+  /* ── MISC ── */
+  .separator { width: 1px; height: 20px; background: var(--border); }
+  .tag {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .add-line-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .add-line-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .dialog-name-input {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: var(--radius);
+    outline: none;
+    width: 160px;
+  }
+  .dialog-name-input:focus { border-color: var(--border2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">FTF <span>Dialog Editor</span></div>
+  <div class="header-actions">
+    <input class="dialog-name-input" id="newDialogName" placeholder="DialogName" />
+    <button class="btn btn-ghost" onclick="newDialog()">+ New</button>
+    <div class="separator"></div>
+    <button class="btn btn-ghost" onclick="exportAll()">Export All</button>
+    <button class="btn btn-primary" onclick="copyOutput()">Copy Lua</button>
+  </div>
+</header>
+
+<div class="workspace">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Dialogs</span>
+      <span id="dialogCount" class="tag">0</span>
+    </div>
+
+    <div class="drop-zone" id="dropZone"
+      ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)"
+      onclick="document.getElementById('fileInput').click()">
+      ↓ Drop .lua file or click
+    </div>
+    <input type="file" id="fileInput" accept=".lua,.txt" style="display:none" onchange="loadFile(event)">
+
+    <div class="dialog-list" id="dialogList"></div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas" id="canvas">
+    <div class="canvas-empty" id="canvasEmpty">
+      <div class="canvas-empty-icon">◈</div>
+      <div class="canvas-empty-text">Select or create a dialog</div>
+    </div>
+    <div id="canvasContent" style="display:none">
+      <div class="canvas-toolbar">
+        <input class="canvas-name" id="dialogNameInput" placeholder="DialogName" oninput="renameDialog(this.value)" />
+        <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Line</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDialog()">Delete</button>
+      </div>
+      <div class="lines-container" id="linesContainer"></div>
+      <div class="add-line-btn" onclick="addLine()">＋ Add Line</div>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-panel">
+    <div class="output-header">
+      <span class="output-title">Lua Output</span>
+      <button class="btn btn-ghost btn-sm" onclick="copyOutput()">Copy</button>
+    </div>
+    <div class="output-code" id="outputCode"><span class="cmt">-- Select a dialog to preview output</span></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let dialogs = {}; // { name: [ lineObj, ... ] }
+let activeDialog = null;
+let dragSrcIndex = null;
+
+// lineObj = { speaker, text, typing, choices: [ choiceObj ] }
+// choiceObj = { text, id, next: [ lineObj ] }
+
+function newLineObj() {
+  return { speaker: "Keth", text: "", typing: false, choices: [] };
+}
+function newChoiceObj() {
+  return { text: "", id: "", next: [] };
+}
+function newNestedLineObj() {
+  return { speaker: "Keth", text: "", typing: false };
+}
+
+// ══════════════════════════════════════
+//  DIALOG MANAGEMENT
+// ══════════════════════════════════════
+function newDialog() {
+  const nameEl = document.getElementById("newDialogName");
+  let name = nameEl.value.trim() || "Dialog" + (Object.keys(dialogs).length + 1);
+  name = name.replace(/\s+/g, "");
+  if (dialogs[name]) { showToast("Name already exists"); return; }
+  dialogs[name] = [newLineObj()];
+  nameEl.value = "";
+  renderSidebar();
+  selectDialog(name);
+}
+
+function selectDialog(name) {
+  activeDialog = name;
+  renderSidebar();
+  renderCanvas();
+  renderOutput();
+}
+
+function renameDialog(newName) {
+  if (!activeDialog || !newName.trim()) return;
+  newName = newName.replace(/\s+/g, "");
+  if (newName === activeDialog) return;
+  if (dialogs[newName]) return;
+  dialogs[newName] = dialogs[activeDialog];
+  delete dialogs[activeDialog];
+  activeDialog = newName;
+  renderSidebar();
+  renderOutput();
+}
+
+function deleteDialog() {
+  if (!activeDialog) return;
+  delete dialogs[activeDialog];
+  activeDialog = null;
+  renderSidebar();
+  renderCanvas();
+  renderOutput();
+}
+
+// ══════════════════════════════════════
+//  LINE MANAGEMENT
+// ══════════════════════════════════════
+function addLine() {
+  if (!activeDialog) return;
+  dialogs[activeDialog].push(newLineObj());
+  renderCanvas();
+  renderOutput();
+}
+
+function removeLine(i) {
+  dialogs[activeDialog].splice(i, 1);
+  renderCanvas();
+  renderOutput();
+}
+
+function addChoice(lineIdx) {
+  dialogs[activeDialog][lineIdx].choices.push(newChoiceObj());
+  renderCanvas();
+  renderOutput();
+}
+
+function removeChoice(lineIdx, cIdx) {
+  dialogs[activeDialog][lineIdx].choices.splice(cIdx, 1);
+  renderCanvas();
+  renderOutput();
+}
+
+function addNestedLine(lineIdx, cIdx) {
+  dialogs[activeDialog][lineIdx].choices[cIdx].next.push(newNestedLineObj());
+  renderCanvas();
+  renderOutput();
+}
+
+function removeNestedLine(lineIdx, cIdx, nIdx) {
+  dialogs[activeDialog][lineIdx].choices[cIdx].next.splice(nIdx, 1);
+  renderCanvas();
+  renderOutput();
+}
+
+// ══════════════════════════════════════
+//  FIELD UPDATES
+// ══════════════════════════════════════
+function updateLine(i, field, value) {
+  dialogs[activeDialog][i][field] = value;
+  renderOutput();
+}
+
+function updateChoice(lineIdx, cIdx, field, value) {
+  dialogs[activeDialog][lineIdx].choices[cIdx][field] = value;
+  renderOutput();
+}
+
+function updateNestedLine(lineIdx, cIdx, nIdx, field, value) {
+  dialogs[activeDialog][lineIdx].choices[cIdx].next[nIdx][field] = value;
+  renderOutput();
+}
+
+// ══════════════════════════════════════
+//  DRAG & DROP (lines)
+// ══════════════════════════════════════
+function onDragStart(e, i) {
+  dragSrcIndex = i;
+  e.currentTarget.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove("dragging");
+  document.querySelectorAll(".line-card").forEach(c => c.classList.remove("drag-over"));
+}
+function onDragOver(e, i) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  document.querySelectorAll(".line-card").forEach(c => c.classList.remove("drag-over"));
+  e.currentTarget.classList.add("drag-over");
+}
+function onDrop(e, i) {
+  e.preventDefault();
+  if (dragSrcIndex === null || dragSrcIndex === i) return;
+  const lines = dialogs[activeDialog];
+  const [moved] = lines.splice(dragSrcIndex, 1);
+  lines.splice(i, 0, moved);
+  dragSrcIndex = null;
+  renderCanvas();
+  renderOutput();
+}
+
+// ══════════════════════════════════════
+//  RENDER SIDEBAR
+// ══════════════════════════════════════
+function renderSidebar() {
+  const list = document.getElementById("dialogList");
+  const count = document.getElementById("dialogCount");
+  const names = Object.keys(dialogs);
+  count.textContent = names.length;
+  list.innerHTML = "";
+  names.forEach(name => {
+    const el = document.createElement("div");
+    el.className = "dialog-item" + (name === activeDialog ? " active" : "");
+    el.innerHTML = `
+      <span class="dialog-item-name">${esc(name)}</span>
+      <span class="dialog-item-count">${dialogs[name].length}</span>
+    `;
+    el.onclick = () => selectDialog(name);
+    list.appendChild(el);
+  });
+}
+
+// ══════════════════════════════════════
+//  RENDER CANVAS
+// ══════════════════════════════════════
+function renderCanvas() {
+  const empty = document.getElementById("canvasEmpty");
+  const content = document.getElementById("canvasContent");
+  if (!activeDialog) {
+    empty.style.display = "flex"; content.style.display = "none"; return;
+  }
+  empty.style.display = "none"; content.style.display = "block";
+  document.getElementById("dialogNameInput").value = activeDialog;
+
+  const container = document.getElementById("linesContainer");
+  container.innerHTML = "";
+  const lines = dialogs[activeDialog];
+
+  lines.forEach((line, i) => {
+    const card = document.createElement("div");
+    card.className = "line-card" + (line.choices.length > 0 ? " has-choices" : "");
+    card.draggable = true;
+    card.addEventListener("dragstart", e => onDragStart(e, i));
+    card.addEventListener("dragend",   e => onDragEnd(e));
+    card.addEventListener("dragover",  e => onDragOver(e, i));
+    card.addEventListener("drop",      e => onDrop(e, i));
+
+    let choicesHTML = "";
+    if (line.choices.length > 0) {
+      choicesHTML = `<div class="choices-section">
+        <div class="choices-header">
+          <span class="choices-label">⬡ Choices</span>
+          <button class="btn btn-ghost btn-sm" onclick="addChoice(${i})">+ Choice</button>
+        </div>`;
+      line.choices.forEach((ch, ci) => {
+        const hasNext = ch.next && ch.next.length > 0;
+        let nestedHTML = "";
+        if (ch.next) {
+          ch.next.forEach((nl, ni) => {
+            nestedHTML += `<div class="nested-line">
+              <div class="nested-line-row">
+                <input class="nested-speaker" value="${esc(nl.speaker||'')}" placeholder="Speaker"
+                  oninput="updateNestedLine(${i},${ci},${ni},'speaker',this.value)" />
+                <textarea class="nested-text" rows="1" placeholder="Dialog text..."
+                  oninput="updateNestedLine(${i},${ci},${ni},'text',this.value);autoResize(this)">${esc(nl.text||'')}</textarea>
+                <button class="btn-icon danger" onclick="removeNestedLine(${i},${ci},${ni})">✕</button>
+              </div>
+            </div>`;
+          });
+        }
+        choicesHTML += `<div class="choice-card">
+          <div class="choice-header">
+            <input class="choice-text-input" value="${esc(ch.text)}" placeholder="Choice text..."
+              oninput="updateChoice(${i},${ci},'text',this.value)" />
+            <input class="choice-id-input" value="${esc(ch.id)}" placeholder="id"
+              oninput="updateChoice(${i},${ci},'id',this.value)" />
+            <button class="btn-icon" onclick="toggleNext(this)">▸ next</button>
+            <button class="btn-icon danger" onclick="removeChoice(${i},${ci})">✕</button>
+          </div>
+          <div class="choice-next ${hasNext ? 'open' : ''}">
+            <div class="choice-next-label">Next lines</div>
+            <div class="choice-next-lines">${nestedHTML}</div>
+            <div class="add-line-btn" style="margin-top:6px" onclick="addNestedLine(${i},${ci})">＋ Add nested line</div>
+          </div>
+        </div>`;
+      });
+      choicesHTML += `</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="line-header">
+        <span class="drag-handle" title="Drag to reorder">⠿</span>
+        <span class="line-index">${i + 1}</span>
+        <input class="speaker-input" value="${esc(line.speaker||'')}" placeholder="Speaker"
+          oninput="updateLine(${i},'speaker',this.value)" />
+        <label class="typing-toggle ${line.typing ? 'on' : ''}" onclick="toggleTyping(this,${i})">
+          <div class="toggle-track"><div class="toggle-thumb"></div></div>
+          Typing
+        </label>
+        <button class="btn-icon" onclick="addChoice(${i})" title="Add choice">⬡</button>
+        <button class="btn-icon danger" onclick="removeLine(${i})">✕</button>
+      </div>
+      <div class="line-body">
+        <textarea class="text-input" rows="2" placeholder="Dialog text..."
+          oninput="updateLine(${i},'text',this.value);autoResize(this)">${esc(line.text||'')}</textarea>
+        ${choicesHTML}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // auto-resize all textareas
+  container.querySelectorAll("textarea").forEach(autoResize);
+}
+
+function toggleTyping(el, i) {
+  const isOn = el.classList.toggle("on");
+  dialogs[activeDialog][i].typing = isOn;
+  renderOutput();
+}
+
+function toggleNext(btn) {
+  const next = btn.closest(".choice-card").querySelector(".choice-next");
+  next.classList.toggle("open");
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
+
+// ══════════════════════════════════════
+//  RENDER OUTPUT (Lua)
+// ══════════════════════════════════════
+function renderOutput() {
+  const el = document.getElementById("outputCode");
+  if (!activeDialog) {
+    el.innerHTML = `<span class="cmt">-- Select a dialog to preview output</span>`;
+    return;
+  }
+  el.innerHTML = buildLua(activeDialog, dialogs[activeDialog]);
+}
+
+function buildLua(name, lines, indent) {
+  indent = indent || 0;
+  const T = "    ".repeat(indent);
+  let out = "";
+
+  if (indent === 0) {
+    out += `<span class="key">Dialogs</span><span class="kw">.</span>${esc(name)} <span class="kw">=</span> {\n`;
+  }
+
+  lines.forEach((line, i) => {
+    out += `${T}    {\n`;
+    out += `${T}        <span class="key">speaker</span> <span class="kw">=</span> <span class="str">"${esc(line.speaker || '???')}"</span>,\n`;
+    out += `${T}        <span class="key">text</span>    <span class="kw">=</span> <span class="str">"${esc(line.text || '')}"</span>,\n`;
+    out += `${T}        <span class="key">typing</span>  <span class="kw">=</span> <span class="num">${line.typing ? 'true' : 'false'}</span>,\n`;
+
+    if (line.choices && line.choices.length > 0) {
+      out += `${T}        <span class="key">choices</span> <span class="kw">=</span> {\n`;
+      line.choices.forEach((ch, ci) => {
+        out += `${T}            {\n`;
+        out += `${T}                <span class="key">text</span>     <span class="kw">=</span> <span class="str">"${esc(ch.text || '')}"</span>,\n`;
+        out += `${T}                <span class="key">id</span>       <span class="kw">=</span> <span class="str">"${esc(ch.id || '')}"</span>,\n`;
+        out += `${T}                <span class="key">onSelect</span> <span class="kw">=</span> <span class="fn">function</span>(<span class="num">id</span>)\n`;
+        out += `${T}                    <span class="cmt">-- handle: ${esc(ch.id || 'choice')}</span>\n`;
+        out += `${T}                <span class="fn">end</span>,\n`;
+
+        if (ch.next && ch.next.length > 0) {
+          out += `${T}                <span class="key">next</span>     <span class="kw">=</span> {\n`;
+          ch.next.forEach(nl => {
+            out += `${T}                    {\n`;
+            out += `${T}                        <span class="key">speaker</span> <span class="kw">=</span> <span class="str">"${esc(nl.speaker || '???')}"</span>,\n`;
+            out += `${T}                        <span class="key">text</span>    <span class="kw">=</span> <span class="str">"${esc(nl.text || '')}"</span>,\n`;
+            out += `${T}                        <span class="key">typing</span>  <span class="kw">=</span> <span class="num">${nl.typing ? 'true' : 'false'}</span>,\n`;
+            out += `${T}                    },\n`;
+          });
+          out += `${T}                },\n`;
+        }
+        out += `${T}            },\n`;
+      });
+      out += `${T}        },\n`;
+    }
+
+    out += `${T}    },\n`;
+  });
+
+  if (indent === 0) {
+    out += `}\n`;
+  }
+  return out;
+}
+
+// ══════════════════════════════════════
+//  EXPORT ALL
+// ══════════════════════════════════════
+function exportAll() {
+  const names = Object.keys(dialogs);
+  if (!names.length) { showToast("No dialogs to export"); return; }
+
+  let raw = `local Dialogs = {}\n\n`;
+  names.forEach(name => {
+    // plain text version
+    raw += `Dialogs.${name} = {\n`;
+    raw += buildLuaPlain(dialogs[name], 0);
+    raw += `}\n\n`;
+  });
+  raw += `return Dialogs\n`;
+
+  const blob = new Blob([raw], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Dialogs.lua";
+  a.click();
+  showToast("Exported Dialogs.lua");
+}
+
+function buildLuaPlain(lines, depth) {
+  const T = "    ".repeat(depth + 1);
+  let out = "";
+  lines.forEach(line => {
+    out += `${T}{\n`;
+    out += `${T}    speaker = "${(line.speaker||'???').replace(/"/g,'\\"')}",\n`;
+    out += `${T}    text    = "${(line.text||'').replace(/"/g,'\\"')}",\n`;
+    out += `${T}    typing  = ${line.typing ? 'true' : 'false'},\n`;
+    if (line.choices && line.choices.length > 0) {
+      out += `${T}    choices = {\n`;
+      line.choices.forEach(ch => {
+        out += `${T}        {\n`;
+        out += `${T}            text     = "${(ch.text||'').replace(/"/g,'\\"')}",\n`;
+        out += `${T}            id       = "${(ch.id||'').replace(/"/g,'\\"')}",\n`;
+        out += `${T}            onSelect = function(id)\n`;
+        out += `${T}                -- handle: ${ch.id||'choice'}\n`;
+        out += `${T}            end,\n`;
+        if (ch.next && ch.next.length > 0) {
+          out += `${T}            next     = {\n`;
+          ch.next.forEach(nl => {
+            out += `${T}                {\n`;
+            out += `${T}                    speaker = "${(nl.speaker||'???').replace(/"/g,'\\"')}",\n`;
+            out += `${T}                    text    = "${(nl.text||'').replace(/"/g,'\\"')}",\n`;
+            out += `${T}                    typing  = ${nl.typing ? 'true' : 'false'},\n`;
+            out += `${T}                },\n`;
+          });
+          out += `${T}            },\n`;
+        }
+        out += `${T}        },\n`;
+      });
+      out += `${T}    },\n`;
+    }
+    out += `${T}},\n`;
+  });
+  return out;
+}
+
+// ══════════════════════════════════════
+//  COPY OUTPUT
+// ══════════════════════════════════════
+function copyOutput() {
+  if (!activeDialog) { showToast("No dialog selected"); return; }
+
+  let raw = `Dialogs.${activeDialog} = {\n`;
+  raw += buildLuaPlain(dialogs[activeDialog], 0);
+  raw += `}\n`;
+
+  navigator.clipboard.writeText(raw).then(() => showToast("Copied to clipboard!"));
+}
+
+// ══════════════════════════════════════
+//  DRAG & DROP FILE
+// ══════════════════════════════════════
+function dzOver(e) { e.preventDefault(); document.getElementById("dropZone").classList.add("dragover"); }
+function dzLeave(e) { document.getElementById("dropZone").classList.remove("dragover"); }
+function dzDrop(e) {
+  e.preventDefault();
+  dzLeave(e);
+  const file = e.dataTransfer.files[0];
+  if (file) readLuaFile(file);
+}
+function loadFile(e) {
+  const file = e.target.files[0];
+  if (file) readLuaFile(file);
+}
+
+function readLuaFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    parseLuaFile(e.target.result, file.name);
+  };
+  reader.readAsText(file);
+}
+
+function parseLuaFile(src, filename) {
+  // Simple regex parser for Dialogs.Name = { ... }
+  const re = /Dialogs\.(\w+)\s*=\s*\{/g;
+  let match;
+  let found = 0;
+  while ((match = re.exec(src)) !== null) {
+    const name = match[1];
+    // Extract block content between matching braces
+    const start = match.index + match[0].length;
+    let depth = 1, i = start;
+    while (i < src.length && depth > 0) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}') depth--;
+      i++;
+    }
+    const block = src.substring(start, i - 1);
+    // create dialog with placeholder note
+    if (!dialogs[name]) {
+      dialogs[name] = [{ speaker: "IMPORTED", text: "Edit lines manually — import detected: " + name, typing: false, choices: [] }];
+      found++;
+    }
+  }
+  if (found > 0) {
+    renderSidebar();
+    showToast(`Imported ${found} dialog(s) from ${filename}`);
+    const first = Object.keys(dialogs)[0];
+    if (first) selectDialog(first);
+  } else {
+    showToast("No Dialogs.X = { } found in file");
+  }
+}
+
+// ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+// ══════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════
+//  INIT with example
+// ══════════════════════════════════════
+dialogs["Example1"] = [
+  { speaker: "...", text: "Welcome to our apartment", typing: false, choices: [] },
+  { speaker: "Keth", text: "I'm Keth, the apartment's owner.", typing: false, choices: [] },
+  {
+    speaker: "Keth", text: "Are you new here, right?", typing: false,
+    choices: [
+      {
+        text: "Yeah..", id: "new_accept",
+        next: [
+          {
+            speaker: "Keth", text: "Oh! Hi nice to see you and what's your name?", typing: false,
+          }
+        ]
+      }
+    ]
+  }
+];
+renderSidebar();
+selectDialog("Example1");
+</script>
+</body>
+</html>
