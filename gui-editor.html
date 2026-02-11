@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTF Dialog GUI Designer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08080b;
+  --panel:#111115;
+  --surface:#161619;
+  --surface2:#1e1e24;
+  --surface3:#26262e;
+  --border:#252530;
+  --border2:#32323f;
+  --text:#e2ddd4;
+  --muted:#5a5570;
+  --muted2:#7a7490;
+  --gold:#c8a84b;
+  --gold2:#e8c96a;
+  --blue:#4a9eff;
+  --green:#4fcf8a;
+  --red:#cf4f5b;
+  --purple:#8b7ef8;
+  --header-h:50px;
+  --panel-w:320px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace}
+
+/* ═══ TOPBAR ═══ */
+#topbar{
+  height:var(--header-h);background:var(--panel);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0;
+  position:relative;z-index:100;flex-shrink:0;
+}
+.tb-logo{
+  padding:0 18px;font-family:'Syne',sans-serif;font-size:13px;font-weight:900;
+  letter-spacing:.14em;color:var(--gold);text-transform:uppercase;
+  border-right:1px solid var(--border);height:100%;display:flex;align-items:center;gap:10px;
+}
+.tb-logo .sub{color:var(--muted2);font-weight:700;font-size:10px;letter-spacing:.08em}
+.tb-group{display:flex;align-items:center;gap:3px;padding:0 10px;border-right:1px solid var(--border);height:100%}
+.tb-btn{
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:500;
+  letter-spacing:.07em;text-transform:uppercase;
+  padding:5px 10px;border-radius:4px;border:1px solid transparent;
+  cursor:pointer;transition:all .12s;white-space:nowrap;
+  background:transparent;color:var(--muted2);
+}
+.tb-btn:hover{color:var(--text);background:var(--surface2)}
+.tb-btn.gold{background:var(--gold);color:#08080b;font-weight:600;border-color:var(--gold)}
+.tb-btn.gold:hover{background:var(--gold2)}
+.tb-btn.active{color:var(--gold);background:rgba(200,168,75,.1);border-color:rgba(200,168,75,.2)}
+.tb-right{margin-left:auto;padding:0 14px;display:flex;align-items:center;gap:8px}
+
+/* ═══ LAYOUT ═══ */
+#app{display:flex;height:calc(100vh - var(--header-h));overflow:hidden}
+
+/* ═══ LEFT PANEL ═══ */
+#left-panel{
+  width:var(--panel-w);flex-shrink:0;
+  background:var(--panel);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.ptab{
+  flex:1;padding:10px 0;font-size:9px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);cursor:pointer;
+  text-align:center;border-bottom:2px solid transparent;
+  transition:all .14s;
+}
+.ptab:hover{color:var(--text)}
+.ptab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.panel-body{flex:1;overflow-y:auto;padding:14px}
+.panel-body::-webkit-scrollbar{width:3px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ═══ SECTION ═══ */
+.section{margin-bottom:20px}
+.section-title{
+  font-family:'Syne',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:6px;
+}
+.section-title::before{content:'';width:3px;height:10px;background:var(--gold);border-radius:2px}
+
+/* ═══ CONTROLS ═══ */
+.ctrl-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+.ctrl-label{font-size:10px;color:var(--muted2);letter-spacing:.04em;flex:1;white-space:nowrap}
+.ctrl-val{font-size:10px;color:var(--gold);letter-spacing:.04em;min-width:40px;text-align:right}
+
+/* Range slider */
+.slider{
+  -webkit-appearance:none;appearance:none;
+  width:110px;height:4px;border-radius:2px;
+  background:var(--surface3);outline:none;cursor:pointer;flex-shrink:0;
+}
+.slider::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--gold);border:2px solid var(--bg);cursor:pointer;
+  box-shadow:0 0 6px rgba(200,168,75,.4);
+  transition:transform .1s;
+}
+.slider::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--gold);border:2px solid var(--bg);cursor:pointer}
+
+/* Color picker */
+.color-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.color-preview{
+  width:28px;height:28px;border-radius:5px;
+  border:1px solid var(--border2);cursor:pointer;flex-shrink:0;
+  position:relative;overflow:hidden;transition:border-color .12s;
+}
+.color-preview:hover{border-color:var(--gold)}
+.color-preview input[type=color]{
+  position:absolute;inset:-4px;width:calc(100%+8px);height:calc(100%+8px);
+  opacity:0;cursor:pointer;border:none;padding:0;
+}
+.color-hex{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);padding:4px 8px;border-radius:4px;
+  outline:none;width:80px;letter-spacing:.06em;
+}
+.color-hex:focus{border-color:var(--border2)}
+.color-label{font-size:10px;color:var(--muted2);flex:1}
+
+/* Toggle */
+.tog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tog-label{font-size:10px;color:var(--muted2)}
+.tog{position:relative;width:32px;height:17px;cursor:pointer;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;background:var(--surface3);border:1px solid var(--border2);border-radius:9px;transition:all .2s}
+.tog input:checked~.tog-track{background:var(--gold);border-color:var(--gold)}
+.tog-thumb{position:absolute;top:2px;left:2px;width:11px;height:11px;background:var(--muted);border-radius:50%;transition:all .2s}
+.tog input:checked~.tog-thumb{left:17px;background:#08080b}
+
+/* Select */
+.fselect{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);padding:4px 8px;border-radius:4px;
+  outline:none;cursor:pointer;width:100%;margin-bottom:8px;
+}
+.fselect:focus{border-color:var(--border2)}
+
+/* Number input */
+.num-inp{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);padding:4px 8px;border-radius:4px;
+  outline:none;width:70px;text-align:right;
+}
+.num-inp:focus{border-color:var(--border2)}
+
+/* ═══ CENTER PREVIEW ═══ */
+#center{flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden}
+#screen-wrap{
+  flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(74,158,255,.04), transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(200,168,75,.03), transparent 60%),
+    var(--bg);
+  overflow:hidden;
+}
+/* fake game background */
+#game-bg{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,#0a1628 0%,#0d1f3a 40%,#081016 100%);
+  overflow:hidden;
+}
+#game-bg::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(40,80,140,.3), transparent 60%),
+    radial-gradient(ellipse at 20% 80%, rgba(20,40,60,.5), transparent 40%);
+}
+/* grid floor lines */
+#game-bg::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:40%;
+  background:repeating-linear-gradient(90deg,rgba(74,158,255,.04) 0,rgba(74,158,255,.04) 1px,transparent 1px,transparent 60px),
+             repeating-linear-gradient(0deg,rgba(74,158,255,.04) 0,rgba(74,158,255,.04) 1px,transparent 1px,transparent 40px);
+  transform:perspective(400px) rotateX(60deg);
+  transform-origin:bottom;
+}
+
+#screen{
+  position:relative;
+  width:880px;height:495px;
+  background:transparent;
+  flex-shrink:0;
+  overflow:hidden;
+}
+
+/* ── DIALOG BOX (preview) ── */
+#dialog-preview{
+  position:absolute;
+  bottom:34px;
+  display:flex;flex-direction:column;
+  transition:all .2s;
+}
+#dialog-box{
+  position:relative;
+  transition:all .2s;
+}
+#db-top-border{position:absolute;top:0;left:0;right:0;height:1px}
+#db-left-border{position:absolute;top:0;left:0;bottom:0;width:1px}
+#db-right-border{position:absolute;top:0;right:0;bottom:0;width:1px}
+#db-speaker{
+  position:absolute;
+  white-space:nowrap;
+  transition:all .2s;
+}
+#db-sep{position:absolute;height:1px;transition:all .2s}
+#db-text{
+  position:absolute;
+  transition:all .2s;line-height:1.55;
+  white-space:pre-wrap;word-break:break-word;
+}
+#db-hint{
+  position:absolute;right:12px;bottom:10px;
+  font-size:9px;opacity:0.38;
+  transition:all .2s;
+}
+/* choices preview */
+#choice-preview{
+  position:relative;
+  transition:all .2s;
+}
+.ch-btn{
+  position:relative;display:flex;align-items:center;
+  cursor:pointer;transition:all .15s;
+}
+.ch-acc{position:absolute;left:0;top:0;bottom:0;width:2px;transition:background .15s}
+.ch-top-border{position:absolute;top:0;left:0;right:0;height:1px}
+.ch-num{position:absolute;transition:all .2s}
+.ch-text{flex:1;transition:all .2s}
+
+/* scale indicator */
+#scale-badge{
+  position:absolute;bottom:8px;right:10px;
+  font-size:8px;color:var(--muted);letter-spacing:.06em;
+  background:rgba(8,8,11,.7);padding:3px 8px;border-radius:3px;
+  border:1px solid var(--border);
+}
+
+/* resize handle */
+#resize-bar{
+  height:4px;background:var(--border);cursor:row-resize;
+  flex-shrink:0;position:relative;transition:background .12s;
+}
+#resize-bar:hover{background:var(--gold)}
+#resize-bar::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:2px;background:var(--border2);border-radius:1px}
+
+/* ═══ RIGHT PANEL ═══ */
+#right-panel{
+  width:var(--panel-w);flex-shrink:0;
+  background:var(--panel);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#out-panel-hdr{
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+#out-panel-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+#out-code{
+  flex:1;overflow-y:auto;padding:14px;
+  font-size:10px;line-height:1.9;
+  white-space:pre;color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  background:var(--bg);
+}
+#out-code::-webkit-scrollbar{width:3px}
+#out-code::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.kw{color:#8b7ef8}.str{color:#4fcf8a}.key{color:#c8a84b}.num{color:#ef9f6f}.cmt{color:#333345}.fn{color:#6fc8ef}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,16px);background:var(--surface3);border:1px solid var(--gold);color:var(--gold);padding:7px 16px;border-radius:4px;font-size:9.5px;letter-spacing:.06em;z-index:999;opacity:0;transition:all .2s;pointer-events:none}
+#toast.show{transform:translate(-50%,0);opacity:1}
+
+/* Preview sample text toggle */
+.sample-wrap{padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0}
+.sample-row{display:flex;gap:6px;flex-wrap:wrap}
+.sample-chip{font-size:9px;padding:3px 8px;border-radius:3px;border:1px solid var(--border2);color:var(--muted2);cursor:pointer;transition:all .12s;letter-spacing:.04em}
+.sample-chip:hover{border-color:var(--gold);color:var(--gold)}
+.sample-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.08)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="tb-logo">FTF <span class="sub">GUI Designer</span></div>
+  <div class="tb-group">
+    <button class="tb-btn" onclick="resetDefaults()">↺ Reset</button>
+    <button class="tb-btn" onclick="loadPreset('minimal')">Minimal</button>
+    <button class="tb-btn" onclick="loadPreset('wide')">Wide</button>
+    <button class="tb-btn" onclick="loadPreset('rpg')">RPG</button>
+  </div>
+  <div class="tb-right">
+    <a class="tb-btn" href="node-editor.html" style="text-decoration: none;">NODE EDITOR</a>
+    <button class="tb-btn" onclick="copyConfig()">Copy CONFIG</button>
+    <button class="tb-btn gold" onclick="exportConfig()">Export CONFIG.lua</button>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ═══ LEFT PANEL — Controls ═══ -->
+  <div id="left-panel">
+    <div class="panel-tabs">
+      <div class="ptab active" onclick="switchTab('box')" id="tab-box">Box</div>
+      <div class="ptab" onclick="switchTab('text')" id="tab-text">Text</div>
+      <div class="ptab" onclick="switchTab('choice')" id="tab-choice">Choice</div>
+      <div class="ptab" onclick="switchTab('anim')" id="tab-anim">Anim</div>
+    </div>
+
+    <!-- BOX TAB -->
+    <div class="panel-body" id="pane-box">
+      <div class="section">
+        <div class="section-title">Box Size</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Width</span>
+          <input type="range" class="slider" min="300" max="900" step="10" id="s-BoxWidth" oninput="update('BoxWidth',+this.value)">
+          <span class="ctrl-val" id="v-BoxWidth">660</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Bottom Padding</span>
+          <input type="range" class="slider" min="10" max="120" step="2" id="s-BottomPad" oninput="update('BottomPad',+this.value)">
+          <span class="ctrl-val" id="v-BottomPad">34</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Box Color</div>
+        <div class="color-row">
+          <div class="color-preview" id="cp-BoxColor" style="background:#0a0a0d">
+            <input type="color" value="#0a0a0d" oninput="updateColorPicker('BoxColor',this.value)">
+          </div>
+          <span class="color-label">Background</span>
+          <input class="color-hex" id="ch-BoxColor" value="#0A0A0D" oninput="updateColorHex('BoxColor',this.value)">
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Transparency</span>
+          <input type="range" class="slider" min="0" max="1" step="0.01" id="s-BoxTransp" oninput="update('BoxTransp',+this.value)">
+          <span class="ctrl-val" id="v-BoxTransp">0.03</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Border</div>
+        <div class="color-row">
+          <div class="color-preview" id="cp-BorderColor" style="background:#ffffff">
+            <input type="color" value="#ffffff" oninput="updateColorPicker('BorderColor',this.value)">
+          </div>
+          <span class="color-label">Border Color</span>
+          <input class="color-hex" id="ch-BorderColor" value="#FFFFFF" oninput="updateColorHex('BorderColor',this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- TEXT TAB -->
+    <div class="panel-body" id="pane-text" style="display:none">
+      <div class="section">
+        <div class="section-title">Body Text</div>
+        <div class="color-row">
+          <div class="color-preview" id="cp-TextColor" style="background:#e0dbd0">
+            <input type="color" value="#e0dbd0" oninput="updateColorPicker('TextColor',this.value)">
+          </div>
+          <span class="color-label">Text Color</span>
+          <input class="color-hex" id="ch-TextColor" value="#E0DBD0" oninput="updateColorHex('TextColor',this.value)">
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Text Size</span>
+          <input type="range" class="slider" min="8" max="28" step="1" id="s-TextSize" oninput="update('TextSize',+this.value)">
+          <span class="ctrl-val" id="v-TextSize">15</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Font</span>
+        </div>
+        <select class="fselect" id="s-TextFont" onchange="update('TextFont',this.value)">
+          <option value="Code">Code</option>
+          <option value="RobotoMono">RobotoMono</option>
+          <option value="SourceSansPro">SourceSansPro</option>
+          <option value="Gotham">Gotham</option>
+          <option value="GothamBold">GothamBold</option>
+          <option value="Arial">Arial</option>
+          <option value="Legacy">Legacy</option>
+          <option value="Antique">Antique</option>
+          <option value="Cartoon">Cartoon</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Speaker Name</div>
+        <div class="color-row">
+          <div class="color-preview" id="cp-NameColor" style="background:#c8a84b">
+            <input type="color" value="#c8a84b" oninput="updateColorPicker('NameColor',this.value)">
+          </div>
+          <span class="color-label">Name Color</span>
+          <input class="color-hex" id="ch-NameColor" value="#C8A84B" oninput="updateColorHex('NameColor',this.value)">
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Name Size</span>
+          <input type="range" class="slider" min="6" max="20" step="1" id="s-NameSize" oninput="update('NameSize',+this.value)">
+          <span class="ctrl-val" id="v-NameSize">11</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Font</span>
+        </div>
+        <select class="fselect" id="s-NameFont" onchange="update('NameFont',this.value)">
+          <option value="Code">Code</option>
+          <option value="RobotoMono">RobotoMono</option>
+          <option value="SourceSansPro">SourceSansPro</option>
+          <option value="Gotham">Gotham</option>
+          <option value="GothamBold">GothamBold</option>
+          <option value="Arial">Arial</option>
+          <option value="GothamBlack">GothamBlack</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Typing Effect</div>
+        <div class="tog-row">
+          <span class="tog-label">Enabled by default</span>
+          <label class="tog">
+            <input type="checkbox" id="t-TypingEnabled" onchange="update('TypingEnabled',this.checked)">
+            <div class="tog-track"></div>
+            <div class="tog-thumb"></div>
+          </label>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Speed (seconds/char)</span>
+          <input type="range" class="slider" min="0.005" max="0.08" step="0.005" id="s-TypingSpeed" oninput="update('TypingSpeed',+this.value.toFixed(3))">
+          <span class="ctrl-val" id="v-TypingSpeed">0.022</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHOICE TAB -->
+    <div class="panel-body" id="pane-choice" style="display:none">
+      <div class="section">
+        <div class="section-title">Choice Buttons</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Height (px)</span>
+          <input type="range" class="slider" min="20" max="70" step="2" id="s-ChoiceHeight" oninput="update('ChoiceHeight',+this.value)">
+          <span class="ctrl-val" id="v-ChoiceHeight">36</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Text Size</span>
+          <input type="range" class="slider" min="8" max="22" step="1" id="s-ChoiceTextSize" oninput="update('ChoiceTextSize',+this.value)">
+          <span class="ctrl-val" id="v-ChoiceTextSize">14</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Choice Hover Color</div>
+        <div class="color-row">
+          <div class="color-preview" id="cp-ChoiceHoverColor" style="background:#120f08">
+            <input type="color" value="#120f08" oninput="updateColorPicker('ChoiceHoverColor',this.value)">
+          </div>
+          <span class="color-label">Hover BG</span>
+          <input class="color-hex" id="ch-ChoiceHoverColor" value="#120F08" oninput="updateColorHex('ChoiceHoverColor',this.value)">
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Preview Choices</div>
+        <div class="tog-row">
+          <span class="tog-label">Show choices in preview</span>
+          <label class="tog">
+            <input type="checkbox" id="t-ShowChoices" checked onchange="renderPreview()">
+            <div class="tog-track"></div>
+            <div class="tog-thumb"></div>
+          </label>
+        </div>
+        <div id="choice-list"></div>
+        <button class="tb-btn" style="width:100%;margin-top:4px;border:1px dashed var(--border2)" onclick="addPreviewChoice()">＋ Add Choice</button>
+      </div>
+    </div>
+
+    <!-- ANIM TAB -->
+    <div class="panel-body" id="pane-anim" style="display:none">
+      <div class="section">
+        <div class="section-title">Animation</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Anim Time (s)</span>
+          <input type="range" class="slider" min="0.05" max="0.8" step="0.01" id="s-AnimTime" oninput="update('AnimTime',+this.value.toFixed(2))">
+          <span class="ctrl-val" id="v-AnimTime">0.18</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Advance Keys</div>
+        <div style="font-size:9.5px;color:var(--muted2);line-height:1.7;margin-bottom:8px">
+          Keys that advance dialog. Output as Enum.KeyCode array in CONFIG.
+        </div>
+        <div id="key-list"></div>
+        <button class="tb-btn" style="width:100%;margin-top:4px;border:1px dashed var(--border2)" onclick="addKey()">＋ Add Key</button>
+      </div>
+      <div class="section">
+        <div class="section-title">Preview Options</div>
+        <div class="tog-row">
+          <span class="tog-label">Animate on hover</span>
+          <label class="tog">
+            <input type="checkbox" id="t-AnimHover" checked onchange="renderPreview()">
+            <div class="tog-track"></div>
+            <div class="tog-thumb"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample text chips -->
+    <div class="sample-wrap">
+      <div style="font-size:8px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">Preview Text</div>
+      <div class="sample-row">
+        <div class="sample-chip active" onclick="setSample(0,this)">Short</div>
+        <div class="sample-chip" onclick="setSample(1,this)">Long</div>
+        <div class="sample-chip" onclick="setSample(2,this)">Multiline</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CENTER — Preview ═══ -->
+  <div id="center">
+    <div id="screen-wrap">
+      <div id="game-bg"></div>
+      <div id="screen">
+        <div id="dialog-preview">
+          <div id="choice-preview"></div>
+          <div id="dialog-box">
+            <div id="db-top-border"></div>
+            <div id="db-left-border"></div>
+            <div id="db-right-border"></div>
+            <div id="db-speaker"></div>
+            <div id="db-sep"></div>
+            <div id="db-text"></div>
+            <div id="db-hint">CONTINUE  ›</div>
+          </div>
+        </div>
+        <div id="scale-badge">880 × 495 px preview</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL — Output ═══ -->
+  <div id="right-panel">
+    <div id="out-panel-hdr">
+      <span id="out-panel-title">CONFIG Output</span>
+      <button class="tb-btn" onclick="copyConfig()">Copy</button>
+    </div>
+    <div id="out-code"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  DEFAULT CONFIG — mirrors FTFDialogSystem
+// ══════════════════════════════════════════
+const CFG = {
+  TypingEnabled: true,
+  TypingSpeed:   0.022,
+  BoxWidth:      660,
+  BoxColor:      {r:10,  g:10,  b:13},
+  BoxTransp:     0.03,
+  BorderColor:   {r:255, g:255, b:255},
+  TextColor:     {r:224, g:219, b:208},
+  TextSize:      15,
+  TextFont:      'Code',
+  NameColor:     {r:200, g:168, b:75},
+  NameSize:      11,
+  NameFont:      'Code',
+  ChoiceTextSize:  14,
+  ChoiceHoverColor:{r:18,  g:15,  b:8},
+  ChoiceHeight:  36,
+  AnimTime:      0.18,
+  BottomPad:     34,
+  AdvanceKeys:   ['Space','Return','E'],
+};
+
+// Preview sample texts
+const SAMPLES = [
+  { speaker:'Keth', text:"I'm Keth, the apartment's owner." },
+  { speaker:'Narrator', text:"The sunlight fades as you cross the threshold. Something is different here — the air carries the weight of a thousand forgotten conversations." },
+  { speaker:'Keth', text:"Are you new here, right?\nI haven't seen you around before." },
+];
+let sampleIdx = 0;
+
+// Preview choice list
+let previewChoices = [
+  {text: "Yeah, just moved in."},
+  {text: "No, I've been here before."},
+];
+
+// Advance keys list
+let advKeys = [...CFG.AdvanceKeys];
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init(){
+  // sync sliders
+  syncSlider('BoxWidth');
+  syncSlider('BottomPad');
+  syncSlider('BoxTransp');
+  syncSlider('TextSize');
+  syncSlider('NameSize');
+  syncSlider('TypingSpeed');
+  syncSlider('ChoiceHeight');
+  syncSlider('ChoiceTextSize');
+  syncSlider('AnimTime');
+  // sync colors
+  syncColor('BoxColor');
+  syncColor('BorderColor');
+  syncColor('TextColor');
+  syncColor('NameColor');
+  syncColor('ChoiceHoverColor');
+  // sync checkboxes
+  document.getElementById('t-TypingEnabled').checked = CFG.TypingEnabled;
+  // sync fonts
+  document.getElementById('s-TextFont').value = CFG.TextFont;
+  document.getElementById('s-NameFont').value = CFG.NameFont;
+
+  buildKeyList();
+  buildChoiceList();
+  renderPreview();
+  renderOutput();
+}
+
+function syncSlider(key){
+  const el = document.getElementById('s-'+key);
+  const vl = document.getElementById('v-'+key);
+  if(!el||!vl) return;
+  el.value = CFG[key];
+  vl.textContent = CFG[key];
+}
+function syncColor(key){
+  const c = CFG[key];
+  const hex = rgbToHex(c.r,c.g,c.b);
+  const cp = document.getElementById('cp-'+key);
+  const ch = document.getElementById('ch-'+key);
+  if(cp) cp.style.background = hex;
+  if(ch) ch.value = hex.toUpperCase();
+}
+
+// ══════════════════════════════════════════
+//  UPDATE FUNCTIONS
+// ══════════════════════════════════════════
+function update(key, val){
+  CFG[key] = val;
+  const vl = document.getElementById('v-'+key);
+  if(vl) vl.textContent = val;
+  renderPreview();
+  renderOutput();
+}
+
+function updateColorPicker(key, hex){
+  CFG[key] = hexToRgb(hex);
+  const cp = document.getElementById('cp-'+key);
+  const ch = document.getElementById('ch-'+key);
+  if(cp) cp.style.background = hex;
+  if(ch) ch.value = hex.toUpperCase();
+  renderPreview();
+  renderOutput();
+}
+
+function updateColorHex(key, hex){
+  if(!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+  CFG[key] = hexToRgb(hex);
+  const cp = document.getElementById('cp-'+key);
+  if(cp) cp.style.background = hex;
+  const picker = cp?.querySelector('input[type=color]');
+  if(picker) picker.value = hex;
+  renderPreview();
+  renderOutput();
+}
+
+function switchTab(name){
+  ['box','text','choice','anim'].forEach(t=>{
+    document.getElementById('pane-'+t).style.display = t===name?'':'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+  });
+}
+
+function setSample(idx, el){
+  sampleIdx = idx;
+  document.querySelectorAll('.sample-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderPreview();
+}
+
+// ══════════════════════════════════════════
+//  KEY LIST (Advance Keys)
+// ══════════════════════════════════════════
+const ROBLOX_KEYS = ['Space','Return','E','F','Q','R','T','G','H','J','K','L','Z','X','C','V','B','N','M','One','Two','Three'];
+
+function buildKeyList(){
+  const el = document.getElementById('key-list');
+  el.innerHTML = '';
+  advKeys.forEach((k,i)=>{
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:6px';
+    row.innerHTML = `
+      <select class="fselect" style="margin-bottom:0;flex:1" onchange="advKeys[${i}]=this.value;CFG.AdvanceKeys=advKeys;renderOutput()">
+        ${ROBLOX_KEYS.map(kk=>`<option value="${kk}"${kk===k?' selected':''}>${kk}</option>`).join('')}
+      </select>
+      <div class="tb-btn" style="padding:4px 8px;color:var(--red);border:1px solid var(--border2)" onclick="remKey(${i})">✕</div>`;
+    el.appendChild(row);
+  });
+}
+
+function addKey(){
+  advKeys.push('Space');CFG.AdvanceKeys=advKeys;
+  buildKeyList();renderOutput();
+}
+function remKey(i){
+  advKeys.splice(i,1);CFG.AdvanceKeys=advKeys;
+  buildKeyList();renderOutput();
+}
+
+// ══════════════════════════════════════════
+//  CHOICE LIST (preview choices)
+// ══════════════════════════════════════════
+function buildChoiceList(){
+  const el = document.getElementById('choice-list');
+  el.innerHTML = '';
+  previewChoices.forEach((ch,i)=>{
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:6px';
+    row.innerHTML = `
+      <input class="num-inp" style="flex:1;width:auto;text-align:left" value="${ch.text}"
+        oninput="previewChoices[${i}].text=this.value;renderPreview()" placeholder="Choice text...">
+      <div class="tb-btn" style="padding:4px 8px;color:var(--red);border:1px solid var(--border2)" onclick="remChoice(${i})">✕</div>`;
+    el.appendChild(row);
+  });
+}
+function addPreviewChoice(){
+  previewChoices.push({text:'New option...'});
+  buildChoiceList();renderPreview();
+}
+function remChoice(i){
+  previewChoices.splice(i,1);
+  buildChoiceList();renderPreview();
+}
+
+// ══════════════════════════════════════════
+//  RENDER PREVIEW
+//  Scale the 660×~150 dialog to fit a 880×495 screen simulation
+// ══════════════════════════════════════════
+function renderPreview(){
+  const W = CFG.BoxWidth;
+  const bgCol  = `rgb(${CFG.BoxColor.r},${CFG.BoxColor.g},${CFG.BoxColor.b})`;
+  const borCol = `rgb(${CFG.BorderColor.r},${CFG.BorderColor.g},${CFG.BorderColor.b})`;
+  const txtCol = `rgb(${CFG.TextColor.r},${CFG.TextColor.g},${CFG.TextColor.b})`;
+  const nmCol  = `rgb(${CFG.NameColor.r},${CFG.NameColor.g},${CFG.NameColor.b})`;
+  const chHovCol = `rgb(${CFG.ChoiceHoverColor.r},${CFG.ChoiceHoverColor.g},${CFG.ChoiceHoverColor.b})`;
+
+  const SCALE = 880 / 1280; // Scale relative to typical 1280-wide game screen
+  const scaledW = W * SCALE;
+  const leftOff  = (880 - scaledW) / 2;
+
+  const sample = SAMPLES[sampleIdx];
+  const showChoices = document.getElementById('t-ShowChoices')?.checked;
+
+  // ── Dialog box ──
+  const box = document.getElementById('dialog-box');
+  box.style.width = scaledW + 'px';
+  box.style.background = bgCol;
+  box.style.opacity = 1 - CFG.BoxTransp;
+
+  // compute approximate height based on text
+  const lineH = CFG.TextSize * 1.55 * SCALE;
+  const textLines = sample.text.split('\n');
+  const charsPerLine = Math.floor((scaledW - 40*SCALE) / (CFG.TextSize * 0.55 * SCALE));
+  let totalLines = 0;
+  textLines.forEach(l => { totalLines += Math.max(1, Math.ceil(l.length / (charsPerLine||1))) });
+  const textH = totalLines * lineH;
+  const boxH = (43 + CFG.TextSize * 1.55 * totalLines + 24) * SCALE;
+  box.style.height = boxH + 'px';
+  box.style.position = 'relative';
+
+  // borders
+  const btop  = document.getElementById('db-top-border');
+  const bleft = document.getElementById('db-left-border');
+  const bright= document.getElementById('db-right-border');
+  const bs = `rgba(${CFG.BorderColor.r},${CFG.BorderColor.g},${CFG.BorderColor.b},`;
+  btop.style.background  = bs+'0.13)';
+  bleft.style.background = bs+'0.07)';
+  bright.style.background= bs+'0.07)';
+
+  // speaker
+  const spk = document.getElementById('db-speaker');
+  spk.textContent = (sample.speaker||'???').toUpperCase();
+  spk.style.cssText = `
+    position:absolute;left:${20*SCALE}px;top:${11*SCALE}px;
+    font-size:${CFG.NameSize*SCALE}px;color:${nmCol};
+    letter-spacing:.12em;font-weight:600;
+  `;
+
+  // sep line
+  const sep = document.getElementById('db-sep');
+  sep.style.cssText = `
+    position:absolute;left:${20*SCALE}px;top:${36*SCALE}px;
+    width:${scaledW*0.4}px;height:1px;
+    background:rgba(${CFG.NameColor.r},${CFG.NameColor.g},${CFG.NameColor.b},.22);
+  `;
+
+  // body text
+  const txt = document.getElementById('db-text');
+  txt.textContent = sample.text;
+  txt.style.cssText = `
+    position:absolute;left:${20*SCALE}px;top:${43*SCALE}px;
+    right:${20*SCALE}px;
+    font-size:${CFG.TextSize*SCALE}px;color:${txtCol};
+    line-height:1.55;white-space:pre-wrap;word-break:break-word;
+  `;
+
+  // hint
+  const hint = document.getElementById('db-hint');
+  hint.style.cssText = `
+    position:absolute;right:${12*SCALE}px;bottom:${10*SCALE}px;
+    font-size:${9*SCALE}px;color:${txtCol};opacity:.38;
+    letter-spacing:.08em;
+  `;
+  hint.style.display = (showChoices && previewChoices.length) ? 'none' : '';
+
+  // position the whole preview
+  const preview = document.getElementById('dialog-preview');
+  preview.style.left = leftOff + 'px';
+  preview.style.bottom = (CFG.BottomPad * SCALE) + 'px';
+  preview.style.width = scaledW + 'px';
+
+  // ── Choices ──
+  const chFrame = document.getElementById('choice-preview');
+  chFrame.innerHTML = '';
+  if(showChoices && previewChoices.length){
+    previewChoices.forEach((ch,i)=>{
+      const btn = document.createElement('div');
+      btn.className = 'ch-btn';
+      btn.style.cssText = `
+        height:${CFG.ChoiceHeight*SCALE}px;
+        background:${bgCol};
+        opacity:${1-CFG.BoxTransp};
+        margin-bottom:2px;
+        position:relative;
+      `;
+      btn.innerHTML = `
+        <div class="ch-acc" style="background:${nmCol};opacity:0;transition:opacity .15s"></div>
+        <div class="ch-top-border" style="background:rgba(${CFG.BorderColor.r},${CFG.BorderColor.g},${CFG.BorderColor.b},.07)"></div>
+        <div style="position:absolute;left:${8*SCALE}px;top:50%;transform:translateY(-50%);
+          font-size:${10*SCALE}px;color:${nmCol};opacity:.5;font-weight:600">${i+1}.</div>
+        <div style="position:absolute;left:${30*SCALE}px;right:${10*SCALE}px;top:50%;transform:translateY(-50%);
+          font-size:${CFG.ChoiceTextSize*SCALE}px;color:rgba(${CFG.TextColor.r},${CFG.TextColor.g},${CFG.TextColor.b},.85);
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ch.text}</div>
+      `;
+      // hover effect
+      btn.addEventListener('mouseenter',()=>{
+        btn.style.background=chHovCol;
+        btn.querySelector('.ch-acc').style.opacity='1';
+        btn.querySelector('div:nth-child(4)').style.color=txtCol;
+      });
+      btn.addEventListener('mouseleave',()=>{
+        btn.style.background=bgCol;
+        btn.querySelector('.ch-acc').style.opacity='0';
+        btn.querySelector('div:nth-child(4)').style.color=`rgba(${CFG.TextColor.r},${CFG.TextColor.g},${CFG.TextColor.b},.85)`;
+      });
+      chFrame.appendChild(btn);
+    });
+  }
+}
+
+// ══════════════════════════════════════════
+//  LUA CONFIG OUTPUT
+// ══════════════════════════════════════════
+function renderOutput(){
+  const el = document.getElementById('out-code');
+  const c = CFG;
+  const keys = advKeys.map(k=>`<span class="fn">Enum</span>.<span class="key">KeyCode</span>.<span class="num">${k}</span>`).join(', ');
+  el.innerHTML =
+`<span class="kw">local</span> <span class="fn">CONFIG</span> <span class="kw">=</span> {
+    <span class="key">TypingEnabled</span>  <span class="kw">=</span> <span class="num">${c.TypingEnabled?'true':'false'}</span>,
+    <span class="key">TypingSpeed</span>    <span class="kw">=</span> <span class="num">${c.TypingSpeed}</span>,
+
+    <span class="key">BoxWidth</span>       <span class="kw">=</span> <span class="num">${c.BoxWidth}</span>,
+    <span class="key">BoxColor</span>       <span class="kw">=</span> <span class="fn">Color3</span>.<span class="key">fromRGB</span>(<span class="num">${c.BoxColor.r}, ${c.BoxColor.g}, ${c.BoxColor.b}</span>),
+    <span class="key">BoxTransp</span>      <span class="kw">=</span> <span class="num">${c.BoxTransp}</span>,
+    <span class="key">BorderColor</span>    <span class="kw">=</span> <span class="fn">Color3</span>.<span class="key">fromRGB</span>(<span class="num">${c.BorderColor.r}, ${c.BorderColor.g}, ${c.BorderColor.b}</span>),
+
+    <span class="key">TextColor</span>      <span class="kw">=</span> <span class="fn">Color3</span>.<span class="key">fromRGB</span>(<span class="num">${c.TextColor.r}, ${c.TextColor.g}, ${c.TextColor.b}</span>),
+    <span class="key">TextSize</span>       <span class="kw">=</span> <span class="num">${c.TextSize}</span>,
+    <span class="key">TextFont</span>       <span class="kw">=</span> <span class="fn">Enum</span>.<span class="key">Font</span>.<span class="num">${c.TextFont}</span>,
+
+    <span class="key">NameColor</span>      <span class="kw">=</span> <span class="fn">Color3</span>.<span class="key">fromRGB</span>(<span class="num">${c.NameColor.r}, ${c.NameColor.g}, ${c.NameColor.b}</span>),
+    <span class="key">NameSize</span>       <span class="kw">=</span> <span class="num">${c.NameSize}</span>,
+    <span class="key">NameFont</span>       <span class="kw">=</span> <span class="fn">Enum</span>.<span class="key">Font</span>.<span class="num">${c.NameFont}</span>,
+
+    <span class="key">ChoiceTextSize</span>   <span class="kw">=</span> <span class="num">${c.ChoiceTextSize}</span>,
+    <span class="key">ChoiceHoverColor</span> <span class="kw">=</span> <span class="fn">Color3</span>.<span class="key">fromRGB</span>(<span class="num">${c.ChoiceHoverColor.r}, ${c.ChoiceHoverColor.g}, ${c.ChoiceHoverColor.b}</span>),
+    <span class="key">ChoiceHeight</span>     <span class="kw">=</span> <span class="num">${c.ChoiceHeight}</span>,
+
+    <span class="key">AnimTime</span>   <span class="kw">=</span> <span class="num">${c.AnimTime}</span>,
+    <span class="key">BottomPad</span>  <span class="kw">=</span> <span class="num">${c.BottomPad}</span>,
+
+    <span class="key">AdvanceKeys</span> <span class="kw">=</span> { ${keys} },
+}`;
+}
+
+function configPlain(){
+  const c = CFG;
+  const keys = advKeys.map(k=>`Enum.KeyCode.${k}`).join(', ');
+  return `local CONFIG = {
+    TypingEnabled  = ${c.TypingEnabled?'true':'false'},
+    TypingSpeed    = ${c.TypingSpeed},
+
+    BoxWidth       = ${c.BoxWidth},
+    BoxColor       = Color3.fromRGB(${c.BoxColor.r}, ${c.BoxColor.g}, ${c.BoxColor.b}),
+    BoxTransp      = ${c.BoxTransp},
+    BorderColor    = Color3.fromRGB(${c.BorderColor.r}, ${c.BorderColor.g}, ${c.BorderColor.b}),
+
+    TextColor      = Color3.fromRGB(${c.TextColor.r}, ${c.TextColor.g}, ${c.TextColor.b}),
+    TextSize       = ${c.TextSize},
+    TextFont       = Enum.Font.${c.TextFont},
+
+    NameColor      = Color3.fromRGB(${c.NameColor.r}, ${c.NameColor.g}, ${c.NameColor.b}),
+    NameSize       = ${c.NameSize},
+    NameFont       = Enum.Font.${c.NameFont},
+
+    ChoiceTextSize   = ${c.ChoiceTextSize},
+    ChoiceHoverColor = Color3.fromRGB(${c.ChoiceHoverColor.r}, ${c.ChoiceHoverColor.g}, ${c.ChoiceHoverColor.b}),
+    ChoiceHeight     = ${c.ChoiceHeight},
+
+    AnimTime   = ${c.AnimTime},
+    BottomPad  = ${c.BottomPad},
+
+    AdvanceKeys = { ${keys} },
+}`;
+}
+
+function copyConfig(){
+  navigator.clipboard.writeText(configPlain()).then(()=>showToast('CONFIG copied!'));
+}
+function exportConfig(){
+  const raw = `-- FTFDialogSystem CONFIG\n-- Generated by FTF GUI Designer\n\n${configPlain()}\n`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([raw],{type:'text/plain'}));
+  a.download = 'FTFDialogConfig.lua';
+  a.click();
+  showToast('Exported FTFDialogConfig.lua');
+}
+
+// ══════════════════════════════════════════
+//  PRESETS
+// ══════════════════════════════════════════
+const PRESETS = {
+  minimal:{
+    BoxWidth:520, BoxColor:{r:5,g:5,b:7}, BoxTransp:0.02,
+    BorderColor:{r:200,g:200,b:200},
+    TextColor:{r:220,g:218,b:212}, TextSize:13, TextFont:'Code',
+    NameColor:{r:160,g:160,b:160}, NameSize:9, NameFont:'Code',
+    ChoiceTextSize:12, ChoiceHoverColor:{r:12,g:12,b:14}, ChoiceHeight:30,
+    AnimTime:0.12, BottomPad:28, TypingEnabled:false, TypingSpeed:0.022,
+  },
+  wide:{
+    BoxWidth:820, BoxColor:{r:8,g:8,b:12}, BoxTransp:0.05,
+    BorderColor:{r:255,g:255,b:255},
+    TextColor:{r:230,g:226,b:218}, TextSize:16, TextFont:'SourceSansPro',
+    NameColor:{r:200,g:168,b:75}, NameSize:12, NameFont:'GothamBold',
+    ChoiceTextSize:15, ChoiceHoverColor:{r:18,g:14,b:6}, ChoiceHeight:42,
+    AnimTime:0.2, BottomPad:40, TypingEnabled:true, TypingSpeed:0.018,
+  },
+  rpg:{
+    BoxWidth:680, BoxColor:{r:15,g:10,b:5}, BoxTransp:0.06,
+    BorderColor:{r:180,g:140,b:60},
+    TextColor:{r:240,g:232,b:200}, TextSize:14, TextFont:'Antique',
+    NameColor:{r:220,g:170,b:60}, NameSize:11, NameFont:'GothamBold',
+    ChoiceTextSize:13, ChoiceHoverColor:{r:35,g:22,b:8}, ChoiceHeight:38,
+    AnimTime:0.22, BottomPad:36, TypingEnabled:true, TypingSpeed:0.028,
+  },
+};
+
+function loadPreset(name){
+  const p = PRESETS[name]; if(!p) return;
+  Object.assign(CFG, p);
+  advKeys = [...CFG.AdvanceKeys||advKeys];
+  syncAllControls();
+  renderPreview();
+  renderOutput();
+  showToast('Preset: '+name);
+}
+
+function resetDefaults(){
+  Object.assign(CFG,{
+    TypingEnabled:true, TypingSpeed:0.022, BoxWidth:660,
+    BoxColor:{r:10,g:10,b:13}, BoxTransp:0.03, BorderColor:{r:255,g:255,b:255},
+    TextColor:{r:224,g:219,b:208}, TextSize:15, TextFont:'Code',
+    NameColor:{r:200,g:168,b:75}, NameSize:11, NameFont:'Code',
+    ChoiceTextSize:14, ChoiceHoverColor:{r:18,g:15,b:8}, ChoiceHeight:36,
+    AnimTime:0.18, BottomPad:34,
+  });
+  advKeys = ['Space','Return','E'];
+  syncAllControls();
+  renderPreview();
+  renderOutput();
+  showToast('Reset to defaults');
+}
+
+function syncAllControls(){
+  syncSlider('BoxWidth'); syncSlider('BottomPad'); syncSlider('BoxTransp');
+  syncSlider('TextSize'); syncSlider('NameSize'); syncSlider('TypingSpeed');
+  syncSlider('ChoiceHeight'); syncSlider('ChoiceTextSize'); syncSlider('AnimTime');
+  syncColor('BoxColor'); syncColor('BorderColor'); syncColor('TextColor');
+  syncColor('NameColor'); syncColor('ChoiceHoverColor');
+  document.getElementById('t-TypingEnabled').checked = CFG.TypingEnabled;
+  document.getElementById('s-TextFont').value = CFG.TextFont;
+  document.getElementById('s-NameFont').value = CFG.NameFont;
+  buildKeyList(); buildChoiceList();
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16);
+  const g=parseInt(hex.slice(3,5),16);
+  const b=parseInt(hex.slice(5,7),16);
+  return{r,g,b};
+}
+function rgbToHex(r,g,b){
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+init();
+</script>
+</body>
+</html>
