@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTF Dialog Node Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--surface:#1a1a1f;--surface2:#222228;--surface3:#2a2a32;
+  --border:#2e2e3a;--border2:#3e3e50;--text:#ddd8cc;--muted:#6a6480;
+  --gold:#c8a84b;--gold2:#e8c96a;--blue:#4a9eff;--blue2:#6ab4ff;
+  --green:#4fcf8a;--red:#cf4f5b;--purple:#7b6fef;--orange:#ef9f6f;
+  --node-w:272px;--header-h:52px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'JetBrains Mono',monospace;color:var(--text);display:flex;flex-direction:column;user-select:none}
+
+/* TOPBAR */
+#topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;position:relative;z-index:50;flex-shrink:0;overflow:hidden;width:100%}
+.tb-logo{padding:0 14px;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;border-right:1px solid var(--border);height:100%;display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
+.tb-logo span{color:var(--muted);font-weight:700;font-size:10px}
+.tb-group{display:flex;align-items:center;gap:2px;padding:0 8px;border-right:1px solid var(--border);height:100%;flex-shrink:0}
+.tb-btn{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:all .12s;white-space:nowrap;background:transparent;color:var(--muted)}
+.tb-btn:hover{color:var(--text);background:var(--surface2)}
+.tb-btn.primary{background:var(--gold);color:#0a0a0c;font-weight:600;border-color:var(--gold)}
+.tb-btn.primary:hover{background:var(--gold2)}
+.tb-btn.active{color:var(--gold);background:rgba(200,168,75,.08)}
+.tb-right{margin-left:auto;padding:0 10px;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.name-inp{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;outline:none;width:120px}
+.name-inp:focus{border-color:var(--border2)}
+
+/* VIEWPORT */
+#viewport{flex:1;position:relative;overflow:hidden;cursor:default}
+#node-layer{position:absolute;top:0;left:0;transform-origin:0 0}
+#svg-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#viewport::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.055) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+
+/* NODES */
+.node{position:absolute;width:var(--node-w);background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:visible;box-shadow:0 8px 28px rgba(0,0,0,.5);transition:box-shadow .15s,border-color .15s;cursor:default}
+.node:hover{border-color:var(--border2)}
+.node.selected{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(200,168,75,.18),0 12px 40px rgba(0,0,0,.7)!important}
+.nhdr{padding:9px 12px 8px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;cursor:grab;border-radius:7px 7px 0 0}
+.nhdr:active{cursor:grabbing}
+.ndot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ntitle{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--text);flex:1;text-transform:uppercase}
+.nbadge{font-size:8px;color:var(--muted);background:var(--surface3);padding:2px 6px;border-radius:3px}
+.nclose{width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);cursor:pointer;transition:all .12s}
+.nclose:hover{background:var(--red);color:#fff}
+.nbody{padding:10px 12px 12px}
+.flabel{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.finput{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:6px 8px;width:100%;outline:none;transition:border-color .12s}
+.finput:focus{border-color:var(--border2)}
+.ftarea{resize:none;min-height:50px;line-height:1.6;overflow:hidden}
+.frow{margin-bottom:8px}
+/* typing toggle */
+.trow{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+.tlbl{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.tog{display:flex;align-items:center;gap:5px;cursor:pointer}
+.ttrack{width:28px;height:14px;background:var(--surface3);border:1px solid var(--border2);border-radius:7px;position:relative;transition:all .2s}
+.tthumb{width:10px;height:10px;background:var(--muted);border-radius:50%;position:absolute;top:1px;left:1px;transition:all .2s}
+.tog.on .ttrack{background:var(--gold);border-color:var(--gold)}
+.tog.on .tthumb{background:#0a0a0c;left:15px}
+.tval{font-size:9px;color:var(--muted)}
+.tog.on .tval{color:var(--gold)}
+
+/* PORTS */
+.pout-wrap{padding:6px 0 0;border-top:1px solid var(--border);margin-top:8px}
+.prow{display:flex;align-items:center;padding:4px 18px 4px 4px;position:relative;min-height:28px;cursor:crosshair}
+.prow:hover .pout{border-color:var(--gold2);transform:scale(1.25) translateY(-50%)}
+.plabel{font-size:10px;color:var(--muted);flex:1;text-align:right;letter-spacing:.04em;font-size:9px}
+/* out port - right */
+.pout{width:13px;height:13px;border-radius:50%;border:2px solid var(--border2);background:var(--surface3);flex-shrink:0;transition:all .15s;position:absolute;right:-7px;top:50%;transform:translateY(-50%);cursor:crosshair}
+.pout.on{background:var(--blue);border-color:var(--blue2)}
+.pout.ch-p{border-color:var(--purple);background:rgba(123,111,239,.2)}
+.pout.ch-p.on{background:var(--purple);border-color:#9b8fff}
+/* in port - left */
+.pin{width:13px;height:13px;border-radius:3px;border:2px solid var(--border2);background:var(--surface3);position:absolute;left:-7px;top:50%;transform:translateY(-50%);transition:all .15s;cursor:crosshair}
+.pin.on{background:var(--blue);border-color:var(--blue2);border-radius:50%}
+
+/* CHOICE NODE rows */
+.ch-rows{margin-top:2px}
+.ch-row{display:flex;align-items:center;gap:4px;padding:5px 18px 5px 4px;position:relative;border-top:1px solid var(--border)}
+.ch-row:first-child{border-top:none}
+.ct-inp{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text);background:transparent;border:none;outline:none;flex:1;min-width:0;padding:1px 0}
+.ct-inp::placeholder{color:var(--muted)}
+.ci-inp{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--purple);background:rgba(123,111,239,.08);border:1px solid rgba(123,111,239,.18);border-radius:3px;padding:2px 4px;width:68px;outline:none}
+.ci-inp:focus{border-color:var(--purple)}
+.ci-inp::placeholder{color:var(--muted)}
+.crem{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);cursor:pointer;transition:all .1s;flex-shrink:0;border:1px solid transparent}
+.crem:hover{background:rgba(207,79,91,.15);color:var(--red);border-color:rgba(207,79,91,.3)}
+.add-opt{display:flex;align-items:center;justify-content:center;gap:5px;padding:5px;margin:4px 12px 4px;border:1px dashed var(--border);border-radius:4px;font-size:9px;color:var(--muted);cursor:pointer;text-transform:uppercase;letter-spacing:.06em;transition:all .12s}
+.add-opt:hover{border-color:var(--purple);color:var(--purple)}
+
+/* CTX MENU */
+#ctx-menu{position:fixed;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px;min-width:180px;z-index:200;box-shadow:0 16px 48px rgba(0,0,0,.7);display:none}
+#ctx-menu.show{display:block}
+.ci{padding:7px 12px;border-radius:4px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--text);transition:background .1s}
+.ci:hover{background:var(--surface3)}
+.ci-icon{font-size:12px;width:14px;text-align:center}
+.ci.danger{color:var(--red)}
+.ci.danger:hover{background:rgba(207,79,91,.12)}
+.c-sep{height:1px;background:var(--border);margin:4px 0}
+.c-hdr{padding:4px 12px 2px;font-size:8px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+
+/* OUTPUT PANEL */
+#out-panel{position:fixed;right:0;top:var(--header-h);bottom:0;width:330px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;z-index:40}
+#out-panel.open{transform:translateX(0)}
+#out-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+#out-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+#out-code{flex:1;overflow-y:auto;padding:14px;font-size:10.5px;line-height:1.8;white-space:pre;color:var(--text);background:var(--bg);font-family:'JetBrains Mono',monospace}
+#out-code::-webkit-scrollbar{width:4px}
+#out-code::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.kw{color:#7b6fef}.str{color:#4fcf8a}.key{color:#c8a84b}.num{color:#ef9f6f}.cmt{color:#3a3a52}.fn{color:#6fc8ef}
+
+/* ZOOM */
+#zoom-badge{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(13,13,15,.8);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:10px;color:var(--muted);pointer-events:none;backdrop-filter:blur(6px);z-index:30}
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);background:var(--surface3);border:1px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:4px;font-size:10px;letter-spacing:.06em;z-index:999;opacity:0;transition:all .2s;pointer-events:none}
+#toast.show{transform:translate(-50%,0);opacity:1}
+
+/* MODAL */
+#modal-ov{position:fixed;inset:0;background:rgba(5,5,8,.75);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(6px)}
+#modal-ov.show{opacity:1;pointer-events:all}
+#modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:380px;box-shadow:0 32px 80px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.04) inset;transform:scale(.88) translateY(16px);transition:transform .28s cubic-bezier(.34,1.48,.64,1);overflow:hidden;position:relative}
+#modal-ov.show #modal-box{transform:scale(1) translateY(0)}
+#modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),rgba(207,79,91,0))}
+#modal-inn{padding:32px 28px 28px;text-align:center}
+#modal-icon-wrap{width:64px;height:64px;border-radius:50%;margin:0 auto 20px;background:radial-gradient(circle at 40% 35%,rgba(207,79,91,.18),rgba(207,79,91,.04));border:1px solid rgba(207,79,91,.22);display:flex;align-items:center;justify-content:center;animation:mpulse 2.4s ease-in-out infinite}
+@keyframes mpulse{0%,100%{box-shadow:0 0 0 0 rgba(207,79,91,.25)}50%{box-shadow:0 0 0 10px rgba(207,79,91,0)}}
+#modal-svg{width:28px;height:28px;stroke:var(--red);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--text);letter-spacing:.03em;margin-bottom:10px}
+#modal-body{font-size:11.5px;color:var(--muted);line-height:1.8;margin-bottom:28px}
+#modal-body strong{color:rgba(207,79,91,.9);font-weight:500}
+#modal-acts{display:flex;gap:10px}
+#m-cancel{flex:1;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:10px 20px;border-radius:6px;cursor:pointer;background:transparent;color:var(--muted);border:1px solid var(--border2);transition:all .14s}
+#m-cancel:hover{background:var(--surface2);color:var(--text)}
+#m-confirm{flex:1;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:10px 20px;border-radius:6px;cursor:pointer;background:var(--red);color:#fff;border:1px solid var(--red);transition:all .14s;position:relative;overflow:hidden}
+#m-confirm::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.08),transparent)}
+#m-confirm:hover{background:#e05565;transform:translateY(-1px);box-shadow:0 4px 16px rgba(207,79,91,.4)}
+#m-confirm:active{transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="tb-logo">FTF <span>Node Editor</span></div>
+  <div class="tb-group">
+    <input class="name-inp" id="diagName" placeholder="DialogName" value="Example1" oninput="renderOutput()"/>
+    <button class="tb-btn" onclick="addDialog()">＋ Dialog</button>
+    <button class="tb-btn" onclick="addChoice()">⬡ Choice</button>
+    <button class="tb-btn" onclick="addEnd()">◼ End</button>
+  </div>
+  <div class="tb-group">
+    <button class="tb-btn" onclick="autoLayout()">⊞ Auto Layout</button>
+    <button class="tb-btn" onclick="fitView()">⊡ Fit View</button>
+  </div>
+  <div class="tb-group">
+    <button class="tb-btn" style="color:var(--red)" onmouseover="this.style.background='rgba(207,79,91,.1)'" onmouseout="this.style.background=''" onclick="clearAll()">⌫ Clear All</button>
+  </div>
+  <div class="tb-group">
+    <button class="tb-btn" id="outBtn" onclick="toggleOut()">{ } Lua Output</button>
+  </div>
+  <div class="tb-right">
+    <button class="tb-btn primary" onclick="copyLua()">Copy Lua</button>
+    <button class="tb-btn" onclick="exportLua()">⬇ Export</button>
+    <button class="tb-btn" onclick="document.getElementById('importFile').click()">⬆ Import</button>
+    <input type="file" id="importFile" accept=".lua" style="display:none" onchange="importLua(event)"/>
+  </div>
+</div>
+
+<div id="viewport"
+  onmousedown="vpDown(event)" onmousemove="vpMove(event)"
+  onmouseup="vpUp(event)" onwheel="vpWheel(event)"
+  oncontextmenu="vpCtx(event)">
+  <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg">
+    <g id="cg"></g>
+    <path id="pw" d="" stroke="rgba(200,168,75,.6)" stroke-width="2" fill="none" stroke-dasharray="6,4" style="pointer-events:none"/>
+  </svg>
+  <div id="node-layer"></div>
+</div>
+
+<div id="out-panel">
+  <div id="out-hdr">
+    <span id="out-title">Lua Output</span>
+    <button class="tb-btn" onclick="copyLua()">Copy</button>
+  </div>
+  <div id="out-code"><span class="cmt">-- Add nodes to preview output</span></div>
+</div>
+
+<div id="ctx-menu">
+  <div class="c-hdr" id="ctx-hdr">Add Node</div>
+  <div class="ci" onclick="ctxDlg()"><span class="ci-icon">💬</span>Dialog Line</div>
+  <div class="ci" onclick="ctxCh()"><span class="ci-icon">⬡</span>Choice Node</div>
+  <div class="ci" onclick="ctxEnd()"><span class="ci-icon">◼</span>End Node</div>
+  <div class="c-sep"></div>
+  <div class="ci danger" id="ctx-del" onclick="ctxDel()" style="display:none"><span class="ci-icon">✕</span>Delete Node</div>
+  <div class="ci" onclick="fitView()"><span class="ci-icon">⊡</span>Fit View</div>
+  <div class="ci" onclick="autoLayout()"><span class="ci-icon">⊞</span>Auto Layout</div>
+</div>
+
+<div id="zoom-badge">100%</div>
+<div id="toast"></div>
+
+<div id="modal-ov" onclick="mOut(event)">
+  <div id="modal-box">
+    <div id="modal-inn">
+      <div id="modal-icon-wrap">
+        <svg id="modal-svg" viewBox="0 0 24 24">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </div>
+      <div id="modal-title">Clear All Nodes?</div>
+      <div id="modal-body">All nodes and connections will be <strong>permanently removed</strong>.<br>This action cannot be undone.</div>
+      <div id="modal-acts">
+        <button id="m-cancel" onclick="mClose()">Cancel</button>
+        <button id="m-confirm" onclick="mConfirm()">Clear All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════
+//  STATE
+// ═══════════════════════════════
+let pan={x:80,y:60},zoom=1;
+let nodes={},conns={};
+let nc=0,cc=0,sel=null;
+let drag=null,panning=false,panStart=null;
+let wiring=null; // {nodeId, portId}
+let ctxTgt=null,ctxPos={x:0,y:0};
+let outOpen=false;
+
+const mkId=p=>p+'_'+(++nc);
+const mkCid=()=>'c'+(++cc);
+
+// ═══════════════════════════════
+//  NODE FACTORIES
+// ═══════════════════════════════
+function mkDialog(x,y,spk,txt){
+  const id=mkId('dlg');
+  nodes[id]={type:'dialog',x,y,speaker:spk||'Keth',text:txt||'',typing:false,
+    outPort:mkId('p'),inPort:mkId('p')};
+  return id;
+}
+function mkChoiceNode(x,y){
+  const id=mkId('ch');
+  nodes[id]={type:'choice',x,y,inPort:mkId('p'),
+    choices:[{id:'opt_a',text:'Option A',outPort:mkId('p')},{id:'opt_b',text:'Option B',outPort:mkId('p')}]};
+  return id;
+}
+function mkEnd(x,y){
+  const id=mkId('end');
+  nodes[id]={type:'end',x,y,inPort:mkId('p')};
+  return id;
+}
+
+// ═══════════════════════════════
+//  RENDER
+// ═══════════════════════════════
+const isCon=pid=>Object.values(conns).some(c=>c.fromPort===pid||c.toPort===pid);
+
+function renderNode(id){
+  const d=nodes[id];
+  let el=document.getElementById('N_'+id);
+  if(!el){el=document.createElement('div');el.id='N_'+id;document.getElementById('node-layer').appendChild(el)}
+  el.style.left=d.x+'px';el.style.top=d.y+'px';
+  el.className='node'+(sel===id?' selected':'');
+  el.onmousedown=e=>{if(e.button===0)e.stopPropagation()};
+  el.onclick=e=>{e.stopPropagation();selNode(id)};
+
+  if(d.type==='dialog') rDialog(id,el,d);
+  else if(d.type==='choice') rChoice(id,el,d);
+  else rEnd(id,el,d);
+  makeDrag(el,id);
+}
+
+function rDialog(id,el,d){
+  el.innerHTML=`
+    <div class="nhdr" id="H_${id}">
+      <div class="ndot" style="background:#4fcf8a"></div>
+      <div class="ntitle">Dialog</div>
+      <div class="nbadge">${id}</div>
+      <div class="nclose" onclick="delNode('${id}')">✕</div>
+    </div>
+    <div class="pin ${isCon(d.inPort)?'on':''}" id="P_${d.inPort}"
+      onmousedown="event.stopPropagation()"
+      onmouseup="portUp(event,'${id}','${d.inPort}','in')"></div>
+    <div class="nbody">
+      <div class="frow">
+        <div class="flabel">Speaker</div>
+        <input class="finput" value="${esc(d.speaker)}" placeholder="Speaker..."
+          oninput="nodes['${id}'].speaker=this.value;renderOutput()"
+          onmousedown="event.stopPropagation()"/>
+      </div>
+      <div class="frow">
+        <div class="flabel">Text</div>
+        <textarea class="finput ftarea" placeholder="Dialog text..."
+          oninput="nodes['${id}'].text=this.value;renderOutput();ar(this)"
+          onmousedown="event.stopPropagation()">${esc(d.text)}</textarea>
+      </div>
+      <div class="trow">
+        <span class="tlbl">Typing Effect</span>
+        <label class="tog ${d.typing?'on':''}" onclick="togTyping('${id}',this)">
+          <div class="ttrack"><div class="tthumb"></div></div>
+          <span class="tval">${d.typing?'ON':'OFF'}</span>
+        </label>
+      </div>
+      <div class="pout-wrap">
+        <div class="prow" onmousedown="portDown(event,'${id}','${d.outPort}')">
+          <span class="plabel">Next ▶</span>
+          <div class="pout ${isCon(d.outPort)?'on':''}" id="P_${d.outPort}"
+            onmouseup="portUp(event,'${id}','${d.outPort}','out')"></div>
+        </div>
+      </div>
+    </div>`;
+  el.querySelectorAll('textarea').forEach(ar);
+}
+
+function rChoice(id,el,d){
+  let rows='';
+  d.choices.forEach((ch,ci)=>{
+    rows+=`<div class="ch-row">
+      <input class="ct-inp" value="${esc(ch.text)}" placeholder="Choice text..."
+        oninput="nodes['${id}'].choices[${ci}].text=this.value;renderOutput()"
+        onmousedown="event.stopPropagation()"/>
+      <input class="ci-inp" value="${esc(ch.id)}" placeholder="id"
+        oninput="nodes['${id}'].choices[${ci}].id=this.value;renderOutput()"
+        onmousedown="event.stopPropagation()"/>
+      <div class="crem" onclick="remOpt('${id}',${ci})" title="Remove">✕</div>
+      <div class="pout ch-p ${isCon(ch.outPort)?'on':''}" id="P_${ch.outPort}"
+        onmousedown="portDown(event,'${id}','${ch.outPort}')"
+        onmouseup="portUp(event,'${id}','${ch.outPort}','ch_out')"
+        title="Connect to next dialog node"></div>
+    </div>`;
+  });
+  el.innerHTML=`
+    <div class="nhdr" id="H_${id}">
+      <div class="ndot" style="background:#7b6fef"></div>
+      <div class="ntitle">Choice</div>
+      <div class="nbadge">${id}</div>
+      <div class="nclose" onclick="delNode('${id}')">✕</div>
+    </div>
+    <div class="pin ${isCon(d.inPort)?'on':''}" id="P_${d.inPort}"
+      onmousedown="event.stopPropagation()"
+      onmouseup="portUp(event,'${id}','${d.inPort}','in')"></div>
+    <div class="nbody">
+      <div class="flabel" style="margin-bottom:6px">Options — drag ● to connect next dialog</div>
+      <div class="ch-rows">${rows}</div>
+    </div>
+    <div class="add-opt" onclick="addOpt('${id}')">＋ Add Option</div>`;
+}
+
+function rEnd(id,el,d){
+  el.innerHTML=`
+    <div class="nhdr" id="H_${id}" style="background:rgba(207,79,91,.1)">
+      <div class="ndot" style="background:#cf4f5b"></div>
+      <div class="ntitle" style="color:#ef9f9f">End Dialog</div>
+      <div class="nbadge">${id}</div>
+      <div class="nclose" onclick="delNode('${id}')">✕</div>
+    </div>
+    <div class="pin ${isCon(d.inPort)?'on':''}" id="P_${d.inPort}"
+      onmousedown="event.stopPropagation()"
+      onmouseup="portUp(event,'${id}','${d.inPort}','in')"></div>
+    <div class="nbody">
+      <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px 0;line-height:1.7">
+        <span style="color:var(--orange)">UnlockEvent:Fire()</span><br>
+        <span style="font-size:9px">Sequence ends here</span>
+      </div>
+    </div>`;
+}
+
+function renderAll(){
+  Object.keys(nodes).forEach(renderNode);
+  renderConns();
+  renderOutput();
+}
+
+// ═══════════════════════════════
+//  SELECTION / DELETE
+// ═══════════════════════════════
+function selNode(id){
+  sel=id;
+  Object.keys(nodes).forEach(nid=>{
+    const el=document.getElementById('N_'+nid);
+    if(el)el.className='node'+(nid===id?' selected':'');
+  });
+}
+function delNode(id){
+  Object.keys(conns).forEach(cid=>{if(conns[cid].from===id||conns[cid].to===id)delete conns[cid]});
+  delete nodes[id];
+  const el=document.getElementById('N_'+id);if(el)el.remove();
+  if(sel===id)sel=null;
+  renderConns();renderOutput();
+}
+function togTyping(id,el){
+  const on=el.classList.toggle('on');
+  nodes[id].typing=on;el.querySelector('.tval').textContent=on?'ON':'OFF';renderOutput();
+}
+function addOpt(id){
+  const n=nodes[id],i=n.choices.length+1;
+  n.choices.push({id:'opt_'+String.fromCharCode(96+i),text:'Option '+String.fromCharCode(64+i),outPort:mkId('p')});
+  renderNode(id);renderConns();renderOutput();
+}
+function remOpt(id,ci){
+  const n=nodes[id];
+  if(n.choices.length<=1){showToast('Need at least 1 option');return}
+  const pid=n.choices[ci].outPort;
+  Object.keys(conns).forEach(cid=>{if(conns[cid].fromPort===pid||conns[cid].toPort===pid)delete conns[cid]});
+  n.choices.splice(ci,1);renderNode(id);renderConns();renderOutput();
+}
+
+// ═══════════════════════════════
+//  DRAG NODES
+// ═══════════════════════════════
+function makeDrag(el,id){
+  const hdr=el.querySelector('.nhdr');if(!hdr)return;
+  hdr.onmousedown=e=>{
+    if(e.button!==0)return;e.stopPropagation();
+    const r=el.getBoundingClientRect();
+    drag={id,ox:e.clientX-r.left,oy:e.clientY-r.top};selNode(id);
+  };
+}
+
+// ═══════════════════════════════
+//  WIRING
+// ═══════════════════════════════
+function portDown(e,nid,pid){e.stopPropagation();e.preventDefault();wiring={nid,pid}}
+function portUp(e,nid,pid,ptype){
+  e.stopPropagation();
+  if(!wiring)return;
+  const from=wiring;wiring=null;clearWire();
+  if(from.nid===nid)return;
+  // prevent duplicate exact wire
+  if(Object.values(conns).find(c=>c.fromPort===from.pid&&c.toPort===pid)){showToast('Already connected');return}
+  // each out-port connects to only ONE target
+  Object.keys(conns).forEach(cid=>{if(conns[cid].fromPort===from.pid)delete conns[cid]});
+  // ALLOW many-to-one: multiple wires can target same inPort
+  const cid=mkCid();
+  conns[cid]={from:from.nid,fromPort:from.pid,to:nid,toPort:pid};
+  renderAll();
+}
+const clearWire=()=>document.getElementById('pw').setAttribute('d','');
+
+// ═══════════════════════════════
+//  SVG CONNECTIONS
+// ═══════════════════════════════
+function renderConns(){
+  const g=document.getElementById('cg');g.innerHTML='';
+  const vp=document.getElementById('viewport').getBoundingClientRect();
+  Object.keys(conns).forEach(cid=>{
+    const c=conns[cid];
+    const fp=document.getElementById('P_'+c.fromPort),tp=document.getElementById('P_'+c.toPort);
+    if(!fp||!tp)return;
+    const fr=fp.getBoundingClientRect(),tr=tp.getBoundingClientRect();
+    const x1=fr.left+fr.width/2-vp.left,y1=fr.top+fr.height/2-vp.top;
+    const x2=tr.left+tr.width/2-vp.left,y2=tr.top+tr.height/2-vp.top;
+    const cx=Math.max(Math.abs(x2-x1)*.55,60);
+    const isC=nodes[c.from]?.type==='choice';
+    const col=isC?'rgba(123,111,239,.8)':'rgba(74,158,255,.8)';
+    const gcol=isC?'rgba(123,111,239,.3)':'rgba(74,158,255,.25)';
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',`M${x1},${y1} C${x1+cx},${y1} ${x2-cx},${y2} ${x2},${y2}`);
+    p.setAttribute('stroke',col);p.setAttribute('stroke-width','2');
+    p.setAttribute('fill','none');p.setAttribute('stroke-linecap','round');
+    p.style.filter=`drop-shadow(0 0 3px ${gcol})`;
+    p.style.pointerEvents='stroke';p.style.cursor='pointer';
+    p.addEventListener('mouseenter',()=>{p.setAttribute('stroke','rgba(207,79,91,.9)');p.setAttribute('stroke-width','3')});
+    p.addEventListener('mouseleave',()=>{p.setAttribute('stroke',col);p.setAttribute('stroke-width','2')});
+    p.addEventListener('click',()=>{delete conns[cid];renderAll()});
+    g.appendChild(p);
+  });
+  // refresh port states
+  Object.keys(nodes).forEach(id=>{
+    const d=nodes[id];
+    const pin=document.getElementById('P_'+d.inPort);
+    if(pin)pin.className='pin'+(isCon(d.inPort)?' on':'');
+    if(d.type==='dialog'){
+      const po=document.getElementById('P_'+d.outPort);
+      if(po)po.className='pout'+(isCon(d.outPort)?' on':'');
+    }
+    if(d.type==='choice'){
+      d.choices.forEach(ch=>{
+        const po=document.getElementById('P_'+ch.outPort);
+        if(po)po.className='pout ch-p'+(isCon(ch.outPort)?' on':'');
+      });
+    }
+  });
+}
+
+// ═══════════════════════════════
+//  VIEWPORT
+// ═══════════════════════════════
+function vpDown(e){
+  if(e.button===0&&!e.target.closest('.node')){
+    panning=true;panStart={x:e.clientX-pan.x,y:e.clientY-pan.y};
+    document.getElementById('viewport').style.cursor='grabbing';
+    sel=null;Object.keys(nodes).forEach(id=>{const el=document.getElementById('N_'+id);if(el)el.className='node'});
+  }
+}
+function vpMove(e){
+  if(panning){pan.x=e.clientX-panStart.x;pan.y=e.clientY-panStart.y;applyTx();renderConns();return}
+  if(drag){
+    const vp=document.getElementById('viewport').getBoundingClientRect();
+    const nx=(e.clientX-vp.left-pan.x)/zoom-drag.ox/zoom;
+    const ny=(e.clientY-vp.top-pan.y)/zoom-drag.oy/zoom;
+    nodes[drag.id].x=nx;nodes[drag.id].y=ny;
+    const el=document.getElementById('N_'+drag.id);
+    if(el){el.style.left=nx+'px';el.style.top=ny+'px'}
+    renderConns();return;
+  }
+  if(wiring){
+    const vp=document.getElementById('viewport').getBoundingClientRect();
+    const fp=document.getElementById('P_'+wiring.pid);if(!fp)return;
+    const fr=fp.getBoundingClientRect();
+    const x1=fr.left+fr.width/2-vp.left,y1=fr.top+fr.height/2-vp.top;
+    const x2=e.clientX-vp.left,y2=e.clientY-vp.top;
+    const cx=Math.max(Math.abs(x2-x1)*.55,40);
+    document.getElementById('pw').setAttribute('d',`M${x1},${y1} C${x1+cx},${y1} ${x2-cx},${y2} ${x2},${y2}`);
+  }
+}
+function vpUp(e){
+  if(panning){panning=false;document.getElementById('viewport').style.cursor='default'}
+  if(drag){drag=null;renderOutput()}
+  if(wiring){wiring=null;clearWire()}
+}
+function vpWheel(e){
+  e.preventDefault();
+  const vp=document.getElementById('viewport').getBoundingClientRect();
+  const mx=e.clientX-vp.left,my=e.clientY-vp.top;
+  const nz=Math.max(.15,Math.min(3,zoom*(e.deltaY>0?.9:1.1)));
+  pan.x=mx-(mx-pan.x)*(nz/zoom);pan.y=my-(my-pan.y)*(nz/zoom);zoom=nz;
+  applyTx();renderConns();
+  document.getElementById('zoom-badge').textContent=Math.round(zoom*100)+'%';
+}
+function applyTx(){document.getElementById('node-layer').style.transform=`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}
+
+function vpCtx(e){
+  e.preventDefault();
+  ctxPos={x:e.clientX,y:e.clientY};
+  ctxTgt=e.target.closest('.node')?.id?.replace('N_','')||null;
+  document.getElementById('ctx-hdr').textContent=ctxTgt?'Node: '+ctxTgt:'Add Node';
+  document.getElementById('ctx-del').style.display=ctxTgt?'flex':'none';
+  const m=document.getElementById('ctx-menu');
+  m.style.left=e.clientX+'px';m.style.top=e.clientY+'px';
+  m.classList.add('show');
+}
+document.addEventListener('click',()=>document.getElementById('ctx-menu').classList.remove('show'));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')mClose();
+  if(e.key==='Delete'&&sel&&!e.target.matches('input,textarea'))delNode(sel);
+  if((e.key==='f'||e.key==='F')&&!e.target.matches('input,textarea'))fitView();
+});
+
+// ═══════════════════════════════
+//  CTX + ADD NODES
+// ═══════════════════════════════
+function wPos(){const vp=document.getElementById('viewport').getBoundingClientRect();return{x:(ctxPos.x-vp.left-pan.x)/zoom,y:(ctxPos.y-vp.top-pan.y)/zoom}}
+function cPos(){const vp=document.getElementById('viewport').getBoundingClientRect();return{x:(-pan.x+vp.width/2-136)/zoom,y:(-pan.y+vp.height/2-80)/zoom}}
+function spawnDialog(x,y){const id=mkDialog(x,y);renderNode(id);renderConns();renderOutput();selNode(id)}
+function spawnChoice(x,y){const id=mkChoiceNode(x,y);renderNode(id);renderConns();renderOutput();selNode(id)}
+function spawnEnd(x,y)  {const id=mkEnd(x,y);renderNode(id);renderConns();renderOutput();selNode(id)}
+function ctxDlg(){const p=wPos();spawnDialog(p.x,p.y)}
+function ctxCh() {const p=wPos();spawnChoice(p.x,p.y)}
+function ctxEnd(){const p=wPos();spawnEnd(p.x,p.y)}
+function ctxDel(){if(ctxTgt)delNode(ctxTgt)}
+function addDialog(){const p=cPos();spawnDialog(p.x,p.y)}
+function addChoice(){const p=cPos();spawnChoice(p.x,p.y)}
+function addEnd()  {const p=cPos();spawnEnd(p.x,p.y)}
+
+// ═══════════════════════════════
+//  FIT / AUTO-LAYOUT
+// ═══════════════════════════════
+function fitView(){
+  const ids=Object.keys(nodes);if(!ids.length)return;
+  let mx=Infinity,my=Infinity,ax=-Infinity,ay=-Infinity;
+  ids.forEach(id=>{const n=nodes[id];mx=Math.min(mx,n.x);my=Math.min(my,n.y);ax=Math.max(ax,n.x+272);ay=Math.max(ay,n.y+200)});
+  const vp=document.getElementById('viewport').getBoundingClientRect();
+  zoom=Math.min((vp.width-80)/(ax-mx||1),(vp.height-80)/(ay-my||1),1.5);
+  pan.x=-mx*zoom+(vp.width-(ax-mx)*zoom)/2;pan.y=-my*zoom+(vp.height-(ay-my)*zoom)/2;
+  applyTx();renderConns();document.getElementById('zoom-badge').textContent=Math.round(zoom*100)+'%';
+}
+function autoLayout(){
+  const ids=Object.keys(nodes);if(!ids.length)return;
+  const adj={};ids.forEach(id=>{adj[id]=[]});
+  Object.values(conns).forEach(c=>{if(adj[c.from])adj[c.from].push(c.to)});
+  const hasIn=new Set(Object.values(conns).map(c=>c.to));
+  const roots=ids.filter(id=>!hasIn.has(id));if(!roots.length)roots.push(ids[0]);
+  const vis=new Set(),cols={};
+  function bfs(id,col){if(vis.has(id))return;vis.add(id);if(!cols[col])cols[col]=[];cols[col].push(id);adj[id].forEach(n=>bfs(n,col+1))}
+  roots.forEach(r=>bfs(r,0));
+  ids.forEach(id=>{if(!vis.has(id)){if(!cols[99])cols[99]=[];cols[99].push(id)}});
+  Object.keys(cols).map(Number).sort((a,b)=>a-b).forEach(col=>{
+    cols[col].forEach((id,row)=>{nodes[id].x=col*320+60;nodes[id].y=row*235+60});
+  });
+  renderAll();setTimeout(fitView,50);showToast('Layout applied');
+}
+
+// ═══════════════════════════════
+//  LUA GENERATION
+//  Exactly matches FTFDialogSystem:
+//  - Dialog.Play(lines, onDone)
+//  - lines[i] = { speaker, text, typing, choices? }
+//  - choices[i] = { text, id, onSelect=function(id) end, next? }
+//  - next = another lines array (recurse)
+//  - Many nodes CAN point to the SAME node (shared continuation)
+// ═══════════════════════════════
+
+// Collect a linear chain of dialog lines starting from nodeId.
+// visited set prevents infinite loops for shared nodes (many-to-one).
+function collectChain(nid, vis){
+  if(!nid||vis.has(nid))return[];
+  const n=nodes[nid];if(!n||n.type==='end')return[];
+  if(n.type!=='dialog')return[];
+  vis.add(nid);
+
+  const line={speaker:n.speaker,text:n.text,typing:n.typing,choices:null};
+
+  // find what comes after the out-port
+  const outC=Object.values(conns).find(c=>c.from===nid&&c.fromPort===n.outPort);
+  if(outC){
+    const next=nodes[outC.to];
+    if(next?.type==='choice'){
+      // build choice array; each choice.next = collectChain from choice's target
+      line.choices=next.choices.map(ch=>{
+        const chC=Object.values(conns).find(c=>c.from===outC.to&&c.fromPort===ch.outPort);
+        return{text:ch.text,id:ch.id,next:chC?collectChain(chC.to,new Set(vis)):[]};
+      });
+      return[line];
+    } else if(next?.type==='dialog'){
+      return[line,...collectChain(outC.to,vis)];
+    }
+  }
+  return[line];
+}
+
+function getSequence(){
+  const ids=Object.keys(nodes);
+  const dlgIds=ids.filter(id=>nodes[id].type==='dialog');
+  if(!dlgIds.length)return[];
+  const hasIn=new Set(Object.values(conns).map(c=>c.to));
+  const starts=dlgIds.filter(id=>!hasIn.has(id));
+  const root=starts[0]||dlgIds[0];
+  return collectChain(root,new Set());
+}
+
+// ── HTML (syntax-highlighted) ──
+function lineHtml(line,T){
+  let o='';
+  o+=`${T}{\n`;
+  o+=`${T}    <span class="key">speaker</span> <span class="kw">=</span> <span class="str">"${esc(line.speaker||'???')}"</span>,\n`;
+  o+=`${T}    <span class="key">text</span>    <span class="kw">=</span> <span class="str">"${esc(line.text||'')}"</span>,\n`;
+  o+=`${T}    <span class="key">typing</span>  <span class="kw">=</span> <span class="num">${line.typing?'true':'false'}</span>,\n`;
+  if(line.choices&&line.choices.length){
+    o+=`${T}    <span class="key">choices</span> <span class="kw">=</span> {\n`;
+    line.choices.forEach(ch=>{
+      o+=`${T}        {\n`;
+      o+=`${T}            <span class="key">text</span>     <span class="kw">=</span> <span class="str">"${esc(ch.text||'')}"</span>,\n`;
+      o+=`${T}            <span class="key">id</span>       <span class="kw">=</span> <span class="str">"${esc(ch.id||'')}"</span>,\n`;
+      o+=`${T}            <span class="key">onSelect</span> <span class="kw">=</span> <span class="fn">function</span>(<span class="num">id</span>)\n`;
+      o+=`${T}                <span class="cmt">-- handle: ${esc(ch.id||'choice')}</span>\n`;
+      o+=`${T}            <span class="fn">end</span>,\n`;
+      if(ch.next&&ch.next.length){
+        o+=`${T}            <span class="key">next</span>     <span class="kw">=</span> {\n`;
+        ch.next.forEach(nl=>o+=lineHtml(nl,T+'                '));
+        o+=`${T}            },\n`;
+      }
+      o+=`${T}        },\n`;
+    });
+    o+=`${T}    },\n`;
+  }
+  o+=`${T}},\n`;
+  return o;
+}
+
+function renderOutput(){
+  const el=document.getElementById('out-code');
+  const ids=Object.keys(nodes);
+  if(!ids.length){el.innerHTML=`<span class="cmt">-- Add nodes to preview</span>`;return}
+  const name=document.getElementById('diagName').value.trim()||'Example1';
+  const lines=getSequence();
+  if(!lines.length){el.innerHTML=`<span class="cmt">-- Connect nodes to generate output</span>`;return}
+  let o=`<span class="key">Dialogs</span>.<span class="fn">${esc(name)}</span> <span class="kw">=</span> {\n`;
+  lines.forEach(l=>o+=lineHtml(l,'    '));
+  o+=`}\n`;
+  el.innerHTML=o;
+}
+
+// ── Plain Lua ──
+function linePlain(line,T){
+  let o='';
+  o+=`${T}{\n`;
+  o+=`${T}    speaker = "${sq(line.speaker||'???')}",\n`;
+  o+=`${T}    text    = "${sq(line.text||'')}",\n`;
+  o+=`${T}    typing  = ${line.typing?'true':'false'},\n`;
+  if(line.choices&&line.choices.length){
+    o+=`${T}    choices = {\n`;
+    line.choices.forEach(ch=>{
+      o+=`${T}        {\n`;
+      o+=`${T}            text     = "${sq(ch.text||'')}",\n`;
+      o+=`${T}            id       = "${sq(ch.id||'')}",\n`;
+      o+=`${T}            onSelect = function(id)\n`;
+      o+=`${T}                -- handle: ${ch.id||'choice'}\n`;
+      o+=`${T}            end,\n`;
+      if(ch.next&&ch.next.length){
+        o+=`${T}            next     = {\n`;
+        ch.next.forEach(nl=>o+=linePlain(nl,T+'                '));
+        o+=`${T}            },\n`;
+      }
+      o+=`${T}        },\n`;
+    });
+    o+=`${T}    },\n`;
+  }
+  o+=`${T}},\n`;
+  return o;
+}
+
+function copyLua(){
+  const name=document.getElementById('diagName').value.trim()||'Example1';
+  const lines=getSequence();
+  let raw=`Dialogs.${name} = {\n`;
+  lines.forEach(l=>raw+=linePlain(l,'    '));
+  raw+=`}\n`;
+  navigator.clipboard.writeText(raw).then(()=>showToast('Copied!'));
+}
+
+function exportLua(){
+  const name=document.getElementById('diagName').value.trim()||'Example1';
+  const lines=getSequence();
+  let raw=`local Dialogs = {}\n\nDialogs.${name} = {\n`;
+  lines.forEach(l=>raw+=linePlain(l,'    '));
+  raw+=`}\n\nreturn Dialogs\n`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([raw],{type:'text/plain'}));
+  // Use project name as filename
+  a.download=name+'.lua';
+  a.click();
+  showToast('Exported '+name+'.lua');
+}
+
+// ═══════════════════════════════
+//  IMPORT LUA
+//  Parses the exported Lua format back into nodes + connections.
+//  Supports: speaker, text, typing, choices, choices[i].next (nested)
+// ═══════════════════════════════
+function importLua(event){
+  const file=event.target.files[0];
+  if(!file) return;
+  // reset input so same file can be re-imported
+  event.target.value='';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const src=e.target.result;
+      // extract dialog name from "Dialogs.NAME = {"
+      const nameMatch=src.match(/Dialogs\.(\w+)\s*=/);
+      const diagName=nameMatch?nameMatch[1]:'Imported';
+      document.getElementById('diagName').value=diagName;
+
+      // Parse lines array from the Lua source
+      const lines=parseLuaLines(src);
+      if(!lines||!lines.length){showToast('Nothing to import');return}
+
+      // clear canvas
+      nodes={};conns={};sel=null;nc=0;cc=0;
+      document.getElementById('node-layer').innerHTML='';
+
+      // build nodes from parsed lines
+      buildNodesFromLines(lines);
+      renderAll();
+      setTimeout(fitView,60);
+      showToast('Imported '+diagName+'.lua');
+    }catch(err){
+      console.error('Import error',err);
+      showToast('Import failed: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Lua parser ──
+// Strips comments, then tokenizes the table structure.
+function parseLuaLines(src){
+  // remove single-line comments
+  src=src.replace(/--[^\n]*/g,'');
+  // find the outer table content: Dialogs.NAME = { ... }
+  const m=src.match(/Dialogs\.\w+\s*=\s*\{([\s\S]*)\}/);
+  if(!m) throw new Error('No Dialogs table found');
+  return parseTableArray(m[1]);
+}
+
+// Parse a Lua array string like "{ {k=v,...}, {k=v,...} }" into JS objects
+function parseTableArray(str){
+  const items=[];
+  // split top-level { } blocks
+  const blocks=splitTopLevelBlocks(str);
+  blocks.forEach(block=>{
+    const obj=parseTableObject(block);
+    if(obj) items.push(obj);
+  });
+  return items;
+}
+
+// Split a Lua table body into top-level { } entries
+function splitTopLevelBlocks(str){
+  const blocks=[];
+  let depth=0,start=-1;
+  for(let i=0;i<str.length;i++){
+    if(str[i]==='{'){
+      if(depth===0) start=i;
+      depth++;
+    } else if(str[i]==='}'){
+      depth--;
+      if(depth===0&&start>=0){
+        blocks.push(str.slice(start+1,i));
+        start=-1;
+      }
+    }
+  }
+  return blocks;
+}
+
+// Parse a Lua table body string into a JS object
+function parseTableObject(str){
+  const obj={};
+  // speaker, text, typing — simple string/bool fields
+  const spk=str.match(/speaker\s*=\s*"((?:[^"\\]|\\.)*)"/);
+  const txt=str.match(/text\s*=\s*"((?:[^"\\]|\\.)*)"/);
+  const typ=str.match(/typing\s*=\s*(true|false)/);
+  if(spk) obj.speaker=spk[1].replace(/\\"/g,'"').replace(/\\\\/g,'\\');
+  if(txt) obj.text=txt[1].replace(/\\"/g,'"').replace(/\\\\/g,'\\');
+  obj.typing=typ?typ[1]==='true':false;
+
+  // choices = { ... }
+  const chMatch=str.match(/choices\s*=\s*\{([\s\S]*)\}/);
+  if(chMatch){
+    obj.choices=[];
+    const chBlocks=splitTopLevelBlocks(chMatch[1]);
+    chBlocks.forEach(cb=>{
+      const ch={};
+      const ct=cb.match(/text\s*=\s*"((?:[^"\\]|\\.)*)"/);
+      const ci=cb.match(/id\s*=\s*"((?:[^"\\]|\\.)*)"/);
+      if(ct) ch.text=ct[1].replace(/\\"/g,'"');
+      if(ci) ch.id=ci[1].replace(/\\"/g,'"');
+      // next = { ... }
+      const nxMatch=cb.match(/next\s*=\s*\{([\s\S]*)\}/);
+      ch.next=nxMatch?parseTableArray(nxMatch[1]):[];
+      obj.choices.push(ch);
+    });
+  } else {
+    obj.choices=[];
+  }
+
+  // only return if we got at least speaker or text
+  if(spk||txt) return obj;
+  return null;
+}
+
+// ── Build node graph from parsed lines ──
+// Returns the ID of the first node in the chain, and an endPort to wire into.
+function buildNodesFromLines(lines, startX, startY, xOff){
+  startX=startX||60; startY=startY||80; xOff=xOff||0;
+  let prevOutPort=null, prevNodeId=null;
+  const NODE_W=320, NODE_H=230;
+  let col=0;
+
+  function placeDialog(line, cx, cy){
+    const id=mkDialog(cx, cy, line.speaker, line.text);
+    nodes[id].typing=line.typing||false;
+    return id;
+  }
+
+  function wireNodes(fromId, fromPort, toId, toPort){
+    const cid=mkCid();
+    conns[cid]={from:fromId,fromPort:fromPort,to:toId,toPort:toPort};
+  }
+
+  // Recursively build a chain; returns {firstInPort, lastId, lastOutPort}
+  function buildChain(linesArr, cx, cy, colDepth){
+    let x=cx, y=cy;
+    let firstIn=null, lastId=null, lastOut=null;
+
+    for(let i=0;i<linesArr.length;i++){
+      const line=linesArr[i];
+      const id=placeDialog(line, x, y);
+      if(!firstIn) firstIn=nodes[id].inPort;
+
+      if(lastOut&&lastId){
+        wireNodes(lastId,lastOut,id,nodes[id].inPort);
+      }
+
+      if(line.choices&&line.choices.length){
+        // create choice node
+        const chX=x+NODE_W;
+        const chY=y;
+        const chId=mkChoiceNode(chX,chY);
+        // adjust choice count
+        const need=line.choices.length;
+        while(nodes[chId].choices.length<need)
+          nodes[chId].choices.push({id:'opt_'+nodes[chId].choices.length,text:'',outPort:mkId('p')});
+        while(nodes[chId].choices.length>need)
+          nodes[chId].choices.pop();
+        // set choice text/id
+        line.choices.forEach((ch,ci)=>{
+          nodes[chId].choices[ci].text=ch.text||'';
+          nodes[chId].choices[ci].id=ch.id||('opt_'+ci);
+        });
+
+        wireNodes(id,nodes[id].outPort,chId,nodes[chId].inPort);
+
+        // build sub-chains for each choice
+        const chH=Math.max(nodes[chId].choices.length*NODE_H, NODE_H);
+        let chY2=chY-(chH/2)+(NODE_H/2);
+        const nextX=chX+NODE_W;
+
+        line.choices.forEach((ch,ci)=>{
+          const cport=nodes[chId].choices[ci].outPort;
+          if(ch.next&&ch.next.length){
+            const sub=buildChain(ch.next, nextX, chY2, colDepth+2);
+            wireNodes(chId,cport,sub.firstNodeId,sub.firstInPort);
+          }
+          chY2+=NODE_H;
+        });
+
+        lastId=chId; lastOut=null; // choice is terminal for this chain
+        x+=NODE_W*2+60; y=cy;
+      } else {
+        lastOut=nodes[id].outPort;
+        lastId=id;
+        x+=NODE_W+60;
+      }
+    }
+    // add End node
+    if(lastId&&lastOut){
+      const endId=mkEnd(x,y);
+      wireNodes(lastId,lastOut,endId,nodes[endId].inPort);
+    }
+    return{firstInPort:firstIn,firstNodeId:Object.keys(nodes).find(k=>nodes[k].inPort===firstIn)};
+  }
+
+  buildChain(lines, startX, startY, 0);
+}
+
+// ═══════════════════════════════
+//  OUTPUT TOGGLE / MODAL / UTILS
+// ═══════════════════════════════
+function toggleOut(){
+  outOpen=!outOpen;
+  document.getElementById('out-panel').classList.toggle('open',outOpen);
+  document.getElementById('outBtn').classList.toggle('active',outOpen);
+  if(outOpen)renderOutput();
+}
+function clearAll(){if(!Object.keys(nodes).length){showToast('Nothing to clear');return}document.getElementById('modal-ov').classList.add('show')}
+function mClose(){document.getElementById('modal-ov').classList.remove('show')}
+function mConfirm(){
+  mClose();nodes={};conns={};sel=null;nc=0;cc=0;
+  document.getElementById('node-layer').innerHTML='';
+  renderConns();renderOutput();showToast('Canvas cleared');
+}
+function mOut(e){if(e.target===document.getElementById('modal-ov'))mClose()}
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const sq=s=>String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+function ar(el){el.style.height='auto';el.style.height=el.scrollHeight+'px'}
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+// ═══════════════════════════════
+//  BOOTSTRAP EXAMPLE
+//  Demonstrates many-to-one: d4 and d5 both connect to d6
+// ═══════════════════════════════
+const d1=mkDialog(60,80,'...','Welcome to our apartment');
+const d2=mkDialog(400,80,'Keth',"I'm Keth, the apartment's owner.");
+const d3=mkDialog(740,80,'Keth','Are you new here, right?');
+const ch1=mkChoiceNode(1080,80);
+const d4=mkDialog(1360,20,'Keth',"Oh! Hi! What's your name?");
+const d5=mkDialog(1360,260,'Keth','Ah, welcome back then!');
+const d6=mkDialog(1660,140,'Keth','Well, make yourself at home!');
+const e1=mkEnd(1960,140);
+
+nodes[ch1].choices[0].text='Yeah..'; nodes[ch1].choices[0].id='new_accept';
+nodes[ch1].choices[1].text='No..';   nodes[ch1].choices[1].id='not_new';
+
+function wire(f,fp,t,tp){const cid=mkCid();conns[cid]={from:f,fromPort:fp,to:t,toPort:tp}}
+wire(d1,nodes[d1].outPort,d2,nodes[d2].inPort);
+wire(d2,nodes[d2].outPort,d3,nodes[d3].inPort);
+wire(d3,nodes[d3].outPort,ch1,nodes[ch1].inPort);
+wire(ch1,nodes[ch1].choices[0].outPort,d4,nodes[d4].inPort);
+wire(ch1,nodes[ch1].choices[1].outPort,d5,nodes[d5].inPort);
+// Both branches share the SAME d6 (many-to-one)
+wire(d4,nodes[d4].outPort,d6,nodes[d6].inPort);
+wire(d5,nodes[d5].outPort,d6,nodes[d6].inPort);
+wire(d6,nodes[d6].outPort,e1,nodes[e1].inPort);
+
+renderAll();
+setTimeout(fitView,80);
+</script>
+</body>
+</html>
